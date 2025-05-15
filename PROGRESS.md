@@ -11,7 +11,8 @@
 - [x] Create basic platform mechanics
 - [x] Add left/right movement controls
 - [x] Implement automatic jumping on platforms
-- [ ] Add manual high jump (on key press)
+- [x] Add manual high jump (on key press)
+- [x] Implement auto-jump toggle (J key)
 - [x] Implement camera scrolling upward
 - [x] Add game over conditions (falling, red platforms, black holes)
 

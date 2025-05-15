@@ -19,6 +19,7 @@ class Player:
         
         # For automatic jumping
         self.auto_jump_cooldown = 0
+        self.auto_jump_enabled = True  # Flag to enable/disable auto-jumping
         
     def update(self):
         """Update player position and physics (all in world coordinates)"""
@@ -35,13 +36,21 @@ class Player:
         # Reset auto jump cooldown if it's active
         if self.auto_jump_cooldown > 0:
             self.auto_jump_cooldown -= 1
+            
+        # Auto-jump when on ground and cooldown is over
+        if self.auto_jump_enabled and self.on_ground and self.auto_jump_cooldown <= 0:
+            self.jump(auto=True)  # Pass auto=True to indicate this is from auto-jump
         
         # Check if we've landed on a platform
         # This will be handled by the collision detection in the game
         
-    def jump(self, force=None):
+    def jump(self, force=None, auto=False):
         """Make the player jump"""
-        if self.on_ground or force:
+        # Allow jump in these cases:
+        # 1. If on ground and auto-jump is disabled (manual jump)
+        # 2. If auto=True parameter is passed (from auto-jump feature)
+        # 3. If force parameter is passed (for special jumps)
+        if (self.on_ground and (not self.auto_jump_enabled or auto or force)) or force:
             # Apply jump velocity
             if force:
                 self.vel_y = force
@@ -55,15 +64,20 @@ class Player:
         
     def bounce(self, strength=None):
         """Bounce the player (automatic jump when hitting platforms)"""
-        # Only allow bounce if cooldown is not active
-        if self.auto_jump_cooldown <= 0:
-            # Increased bounce height significantly
-            bounce_strength = strength if strength is not None else self.jump_strength * 1.5
-            self.vel_y = bounce_strength
-            self.is_jumping = True
-            self.on_ground = False
-            return True
-        return False
+        # Always allow bounce from platforms (platform bounce_ready property will control this)
+        # Bounce should work regardless of auto-jump settings
+        bounce_strength = strength if strength is not None else self.jump_strength * 2
+        
+        # Directly set velocity without going through jump logic
+        # This ensures bouncing always works regardless of auto-jump setting
+        self.vel_y = bounce_strength
+        self.is_jumping = True
+        self.on_ground = False
+        
+        # Reduced auto_jump_cooldown to allow faster consecutive bounces
+        # This way if player falls back onto same platform, they can bounce again immediately
+        self.auto_jump_cooldown = 2
+        return True
         
     def shoot(self):
         """Shoot a projectile"""
@@ -101,4 +115,9 @@ class Player:
     def draw(self, screen, camera_y):
         """Draw the player, converting world coordinates to screen coordinates"""
         player_screen_y = self.y - camera_y
-        pygame.draw.circle(screen, self.color, (int(self.x), int(player_screen_y)), self.radius) 
+        pygame.draw.circle(screen, self.color, (int(self.x), int(player_screen_y)), self.radius)
+        
+    def toggle_auto_jump(self):
+        """Toggle auto-jump on/off"""
+        self.auto_jump_enabled = not self.auto_jump_enabled
+        return self.auto_jump_enabled 

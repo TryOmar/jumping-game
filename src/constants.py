@@ -13,7 +13,7 @@ YELLOW = (255, 255, 0)
 
 # Physics
 GRAVITY = 0.5
-JUMP_STRENGTH = -10
+JUMP_STRENGTH = -15
 MOVE_SPEED = 5
 
 # Game settings

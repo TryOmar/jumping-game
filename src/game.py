@@ -29,6 +29,11 @@ class Game:
         # Debug mode
         self.debug_mode = False
         
+        # Auto-jump message display
+        self.show_auto_jump_message = False
+        self.auto_jump_message_time = 0
+        self.auto_jump_status = True  # Default is enabled
+        
         # Menu options
         self.menu_options = ["Play", "How to Play", "Settings", "Exit"]
         self.selected_option = 0
@@ -58,6 +63,17 @@ class Game:
                 # Toggle debug mode with F1
                 if event.key == pygame.K_F1:
                     self.toggle_debug()
+                
+                # Toggle auto-jump with J key
+                if event.key == pygame.K_j and self.player:
+                    enabled = self.player.toggle_auto_jump()
+                    status = "enabled" if enabled else "disabled"
+                    print(f"Auto-jump {status}")
+                    
+                    # Add visual feedback when auto-jump is toggled
+                    self.show_auto_jump_message = True
+                    self.auto_jump_message_time = pygame.time.get_ticks()
+                    self.auto_jump_status = enabled
                 
                 # Main menu controls
                 if self.state_manager.is_state(GameState.MAIN_MENU):
@@ -180,13 +196,16 @@ class Game:
 
         # Reset all platform collision flags
         for platform in self.current_map.platforms:
-            platform.colliding = False
+            # Don't reset platform.colliding here, let platforms manage their own state
+            pass
 
         # Get platforms the player might be colliding with
         colliding_platforms = []
         for platform in self.current_map.platforms:
             # Only check for collision if we're falling onto a platform
-            if self.player.vel_y <= 0:
+            # Small modification: allow collision if player is at peak of jump (vel_y near zero)
+            # or falling (vel_y positive), but not when rising quickly
+            if self.player.vel_y < -2:  # Only avoid collision when player is rising quickly
                 continue
                 
             # Ensure the player's feet are at or below the top of the platform
@@ -202,7 +221,8 @@ class Game:
                 self.player.x - self.player.radius < platform.x + platform.width):
                 
                 # Check if the player is falling onto the platform (not rising through it)
-                if foot_y >= platform.y and foot_y <= platform.y + 10:  # 10 pixels of tolerance
+                # Increased tolerance for better bouncing
+                if foot_y >= platform.y and foot_y <= platform.y + 15:  # 15 pixels of tolerance
                     colliding_platforms.append(platform)
                     platform.colliding = True  # Set collision flag for visualization
         
@@ -354,11 +374,47 @@ class Game:
                 self.screen.blit(vel_text, (10, 175)) # Adjusted y for new line
                 jump_text = font.render(f"On Ground: {self.player.on_ground} | Jumping: {self.player.is_jumping} | Cool: {self.player.auto_jump_cooldown}", True, BLACK)
                 self.screen.blit(jump_text, (10, 220))
+                auto_jump_text = font.render(f"Auto-Jump: {'ON' if self.player.auto_jump_enabled else 'OFF'}", True, (0, 128, 0) if self.player.auto_jump_enabled else (200, 0, 0))
+                self.screen.blit(auto_jump_text, (10, 240))
         
         font = pygame.font.SysFont(None, 36)
         score = self.state_manager.get_state_data("score")
         text = font.render(f"Score: {score}", True, BLACK)
         self.screen.blit(text, (10, 10))
+        
+        # Show auto-jump toggle instructions and status
+        font_small = pygame.font.SysFont(None, 24)
+        auto_status = "ON" if self.player and self.player.auto_jump_enabled else "OFF"
+        status_color = (0, 128, 0) if self.player and self.player.auto_jump_enabled else (200, 0, 0)
+        text = font_small.render(f"Auto-Jump: {auto_status} (Press J to toggle)", True, status_color)
+        self.screen.blit(text, (10, 45))
+        
+        # Display auto-jump toggle message if active
+        if self.show_auto_jump_message:
+            # Check if message should still be displayed (show for 2 seconds)
+            current_time = pygame.time.get_ticks()
+            if current_time - self.auto_jump_message_time < 2000:  # 2000ms = 2s
+                # Create a semi-transparent background for the message
+                msg_surface = pygame.Surface((400, 80), pygame.SRCALPHA)
+                msg_surface.fill((0, 0, 0, 128))  # Black with 50% transparency
+                
+                # Add message text
+                msg_font = pygame.font.SysFont(None, 36)
+                msg_status = "ENABLED" if self.auto_jump_status else "DISABLED"
+                msg_color = (0, 255, 0) if self.auto_jump_status else (255, 0, 0)
+                msg_text = msg_font.render(f"Auto-Jump {msg_status}", True, msg_color)
+                
+                # Center the message on the screen
+                msg_x = self.width // 2 - msg_surface.get_width() // 2
+                msg_y = self.height // 2 - msg_surface.get_height() // 2
+                
+                # Draw message background and text
+                self.screen.blit(msg_surface, (msg_x, msg_y))
+                self.screen.blit(msg_text, (msg_x + 200 - msg_text.get_width() // 2, 
+                                          msg_y + 40 - msg_text.get_height() // 2))
+            else:
+                # Time expired, hide message
+                self.show_auto_jump_message = False
         
         if self.debug_mode:
             font = pygame.font.SysFont(None, 24)
@@ -409,8 +465,39 @@ class Game:
     
     def _render_how_to_play(self):
         """Render instructions screen"""
-        # Will be implemented later
-        pass
+        # Fill background
+        self.screen.fill((230, 230, 250))  # Light blue/purple background
+        
+        # Title
+        title_font = pygame.font.SysFont(None, 48)
+        title = title_font.render("How to Play", True, BLACK)
+        self.screen.blit(title, (self.width // 2 - title.get_width() // 2, 50))
+        
+        # Instructions
+        instructions = [
+            "Move LEFT and RIGHT with arrow keys",
+            "Press UP to jump manually (when auto-jump is off)",
+            "Press J to toggle auto-jump mode ON/OFF",
+            "Auto-jump: Player jumps automatically when landing on platforms",
+            "Bounce on platforms to climb higher and score points",
+            "Watch out for red dangerous platforms!",
+            "Yellow platforms will disappear after you bounce on them",
+            "Blue platforms move horizontally",
+            "Don't fall off the bottom of the screen!"
+        ]
+        
+        y_pos = 120
+        line_height = 30
+        instruction_font = pygame.font.SysFont(None, 28)
+        
+        for line in instructions:
+            text = instruction_font.render(line, True, BLACK)
+            self.screen.blit(text, (self.width // 2 - text.get_width() // 2, y_pos))
+            y_pos += line_height
+        
+        # Return to main menu
+        back_text = instruction_font.render("Press ESC to return to main menu", True, BLACK)
+        self.screen.blit(back_text, (self.width // 2 - back_text.get_width() // 2, self.height - 50))
     
     def handle_platform_effect(self, platform):
         """Handle special effects for different platform types"""
@@ -418,7 +505,11 @@ class Game:
         platform.on_collision(self.player)
         
         # Make the player bounce
-        self.player.bounce()
+        # Always bounce if platform is bounce_ready or if player is falling
+        # onto a platform (vel_y > 0)
+        # This ensures consistent bouncing regardless of auto-jump settings
+        if self.player.vel_y > 0 or platform.bounce_ready:
+            self.player.bounce()
         
         # Handle platform type specific effects
         if isinstance(platform, DangerousPlatform):

@@ -17,6 +17,8 @@ class Platform:
         self.color = color or GREEN
         self.colliding = False
         self.collision_timer = 0
+        self.bounce_ready = True
+        self.last_collision_time = 0  # Track when last collision occurred
         
     def update(self, camera_y):
         """Update platform"""
@@ -26,10 +28,17 @@ class Platform:
                 self.colliding = False
                 self.collision_timer = 0
         
+        # Reset bounce_ready flag after a short cooldown, even if player is still on platform
+        # This allows bouncing on the same platform multiple times
+        if not self.bounce_ready and pygame.time.get_ticks() - self.last_collision_time > 300:  # 300ms cooldown
+            self.bounce_ready = True
+        
     def on_collision(self, player):
         """Handle collision with player"""
         self.colliding = True
         self.collision_timer = 0
+        self.bounce_ready = False  # Mark as not ready for bounce until reset
+        self.last_collision_time = pygame.time.get_ticks()
         pass
 
     # draw() method removed as Map.draw handles platform drawing
