@@ -18,3 +18,8 @@ MOVE_SPEED = 5
 
 # Game settings
 PLATFORM_COUNT = 10 
+
+# Platform settings
+PLATFORM_WIDTH = 100
+PLATFORM_HEIGHT = 20
+PLATFORM_COLORS = [GREEN, BLUE, YELLOW, (255, 200, 0)]  # Regular, Moving, Disappearing, Disappearing (low jumps) 
