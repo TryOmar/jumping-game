@@ -4,7 +4,7 @@
 - [x] Initialize pygame project with basic window
 - [x] Create main game loop structure
 - [x] Set up file organization (folders for assets, classes, etc.)
-- [ ] Create base game class (state management)
+- [x] Create base game class (state management)
 
 ## 🎮 Core Gameplay
 - [ ] Implement ball physics (gravity, bouncing)
