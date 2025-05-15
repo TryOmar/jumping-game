@@ -7,13 +7,13 @@
 - [x] Create base game class (state management)
 
 ## 🎮 Core Gameplay
-- [ ] Implement ball physics (gravity, bouncing)
-- [ ] Create basic platform mechanics
-- [ ] Add left/right movement controls
-- [ ] Implement automatic jumping on platforms
+- [x] Implement ball physics (gravity, bouncing)
+- [x] Create basic platform mechanics
+- [x] Add left/right movement controls
+- [x] Implement automatic jumping on platforms
 - [ ] Add manual high jump (on key press)
-- [ ] Implement camera scrolling upward
-- [ ] Add game over conditions (falling, red platforms, black holes)
+- [x] Implement camera scrolling upward
+- [x] Add game over conditions (falling, red platforms, black holes)
 
 ## 🧩 Game Elements
 - [ ] Design and implement player ball
