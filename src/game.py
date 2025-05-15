@@ -134,47 +134,40 @@ class Game:
     def update(self):
         """Update game state"""
         if self.state_manager.is_state(GameState.PLAYING):
-            # Only update game objects when in PLAYING state
             if self.player and self.current_map:
-                # Handle player input
                 keys = pygame.key.get_pressed()
                 self.player.handle_input(keys)
-                
-                # Update player
-                self.player.update()
-                
-                # Check if player is going off screen horizontally (wrap around)
+                self.player.update() # Player position (world) updated by physics
+
                 if self.player.x < 0:
                     self.player.x = self.width
                 elif self.player.x > self.width:
                     self.player.x = 0
                 
-                # Update camera position if player gets too high
-                if self.player.y < self.height // 3:
-                    # Move camera up, move player down relatively
-                    camera_shift = self.height // 3 - self.player.y
-                    
-                    # IMPORTANT: This is the key to our coordinate system
-                    # We move both the camera up and the player down by the same amount
-                    # This keeps the player in the same visual position on screen
-                    # while changing both the world coordinate systems
-                    self.camera_y -= camera_shift  # Move camera up (negative y is up)
-                    self.player.y += camera_shift  # Move player down to compensate
-                    
-                    # Update score based on height
+                # Camera scrolling logic based on player's screen position
+                player_screen_y = self.player.y - self.camera_y
+                scroll_threshold_screen = self.height // 3
+
+                if player_screen_y < scroll_threshold_screen:
+                    # Calculate how much the camera needs to move up to keep the player at the threshold
+                    camera_scroll_amount = scroll_threshold_screen - player_screen_y
+                    self.camera_y -= camera_scroll_amount # Camera moves up (camera_y becomes more negative)
+                    # Player's world_y is NOT changed by camera scroll; physics handles player world movement.
+                    # The previous self.player.y += camera_shift was an attempt to keep player screen-relative,
+                    # but it's better if player.y is pure world and camera adjusts around it.
+
                     self.state_manager.set_state_data("score", abs(int(self.camera_y)))
                 
-                # Check if player has fallen off the bottom
-                if self.player.y > self.height:
+                # Check if player has fallen off the bottom of the screen
+                player_screen_y_for_fall_check = self.player.y - self.camera_y
+                if player_screen_y_for_fall_check > self.height + self.player.radius: # Added radius for buffer
                     self.state_manager.change_state(GameState.GAME_OVER, 
                                                  score=abs(int(self.camera_y)), 
                                                  reason="Fall")
                 
-                # Update map and check collisions
                 self.current_map.update(self.camera_y)
-                self.check_platform_collisions()
+                self.check_platform_collisions() # Uses world coordinates
                 
-                # Check if player has reached target height
                 if self.camera_y <= self.current_map.target_height:
                     self.state_manager.change_state(GameState.GAME_OVER, 
                                                  score=abs(int(self.camera_y)), 
@@ -339,44 +332,34 @@ class Game:
     
     def _render_game(self):
         """Render the actual gameplay"""
-        # Draw map
         if self.current_map:
             self.current_map.draw(self.screen, self.camera_y)
-            # Show debug info if enabled
             if self.debug_mode:
                 self.current_map.draw_platform_info(self.screen, self.camera_y)
-                
-                # Draw camera position
                 font = pygame.font.SysFont(None, 24)
-                text = font.render(f"Camera Y: {self.camera_y:.0f}", True, BLACK)
+                text = font.render(f"Camera Y (World): {self.camera_y:.0f}", True, BLACK)
                 self.screen.blit(text, (10, 130))
-                
-                # Draw coordinate system explanation
-                coord_text = font.render("Coordinates: World → Screen (Y - Camera Y)", True, BLACK)
+                coord_text = font.render("World Y → Screen Y (World Y - Camera Y)", True, BLACK)
                 self.screen.blit(coord_text, (10, 190))
         
-        # Draw player
         if self.player:
-            # Draw the player at its screen position (no need to adjust for camera since we move the player)
-            self.player.draw(self.screen)
+            self.player.draw(self.screen, self.camera_y) # Pass camera_y
             
-            # In debug mode, show player position and velocity
             if self.debug_mode:
                 font = pygame.font.SysFont(None, 24)
-                text = font.render(f"Player: ({self.player.x:.0f}, {self.player.y:.0f}) Vel: ({self.player.vel_x:.1f}, {self.player.vel_y:.1f})", True, BLACK)
+                player_screen_y_debug = self.player.y - self.camera_y
+                text = font.render(f"Player (World Y): {self.player.y:.0f} (Screen Y): {player_screen_y_debug:.0f}", True, BLACK)
                 self.screen.blit(text, (10, 160))
-                
-                # Show player jump state
-                jump_text = font.render(f"On Ground: {self.player.on_ground} | Is Jumping: {self.player.is_jumping} | Cooldown: {self.player.auto_jump_cooldown}", True, BLACK)
+                vel_text = font.render(f"Vel: ({self.player.vel_x:.1f}, {self.player.vel_y:.1f})", True, BLACK)
+                self.screen.blit(vel_text, (10, 175)) # Adjusted y for new line
+                jump_text = font.render(f"On Ground: {self.player.on_ground} | Jumping: {self.player.is_jumping} | Cool: {self.player.auto_jump_cooldown}", True, BLACK)
                 self.screen.blit(jump_text, (10, 220))
         
-        # Draw score
         font = pygame.font.SysFont(None, 36)
         score = self.state_manager.get_state_data("score")
         text = font.render(f"Score: {score}", True, BLACK)
         self.screen.blit(text, (10, 10))
         
-        # Show debug mode indicator
         if self.debug_mode:
             font = pygame.font.SysFont(None, 24)
             text = font.render("DEBUG MODE (F1 to toggle)", True, (255, 0, 0))

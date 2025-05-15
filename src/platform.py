@@ -11,33 +11,28 @@ class Platform:
         Platform.id_counter += 1
         self.id = Platform.id_counter
         self.x = x
-        self.y = y
+        self.y = y # World Y coordinate
         self.width = width
         self.height = height
         self.color = color or GREEN
-        self.colliding = False  # Flag for collision detection visualization
+        self.colliding = False
         self.collision_timer = 0
         
     def update(self, camera_y):
         """Update platform"""
-        # Reset collision visualization after a few frames
         if self.colliding:
             self.collision_timer += 1
-            if self.collision_timer > 5:  # Reset after 5 frames
+            if self.collision_timer > 5:
                 self.colliding = False
                 self.collision_timer = 0
         
     def on_collision(self, player):
         """Handle collision with player"""
-        # Base platform just stops the player
-        # Set the collision flag for visualization
         self.colliding = True
         self.collision_timer = 0
         pass
 
-    def draw(self, screen):
-        # This is handled by the Map class now
-        pass
+    # draw() method removed as Map.draw handles platform drawing
         
 class MovingPlatform(Platform):
     """Platform that moves horizontally"""
@@ -47,46 +42,36 @@ class MovingPlatform(Platform):
         super().__init__(x, y, width, height, color or BLUE)
         self.speed = speed or random.uniform(1, 3)
         self.direction = random.choice([-1, 1])
-        self.start_x = x
+        self.start_x = x # Not currently used, but might be useful for defined paths
         
     def update(self, camera_y):
         """Update platform position"""
-        # Move horizontally
         self.x += self.speed * self.direction
         
-        # Bounce off edges (assume screen width from constants)
-        screen_width = 800  # Default value
-        if 'SCREEN_WIDTH' in globals():
-            screen_width = SCREEN_WIDTH
-            
+        # Using SCREEN_WIDTH directly from constants for boundary check
         if self.x <= 0:
             self.x = 0
             self.direction = 1
-        elif self.x + self.width >= screen_width:
-            self.x = screen_width - self.width
+        elif self.x + self.width >= SCREEN_WIDTH:
+            self.x = SCREEN_WIDTH - self.width
             self.direction = -1
             
-        # Reset collision visualization
         super().update(camera_y)
         
-    def draw(self, screen):
-        # Draw the platform
-        pygame.draw.rect(screen, self.color, (self.x, self.y, self.width, self.height))
+    # draw() method removed
         
 class DisappearingPlatform(Platform):
     """Platform that disappears after player jumps from it"""
     
     def __init__(self, x, y, width, height, color=None, jumps=None):
         """Initialize disappearing platform"""
-        super().__init__(x, y, width, height, color or (255, 200, 0))  # Orange
-        self.jumps_remaining = jumps or 1  # How many jumps before it disappears
-        self.original_color = color or (255, 200, 0)
-        
+        super().__init__(x, y, width, height, color or (255, 200, 0)) # Orange
+        self.jumps_remaining = jumps or 1
+        self.original_color = self.color # Store the initial color for multi-jump platforms
+    
     def on_collision(self, player):
         """Handle collision with player"""
-        # Reduce number of jumps remaining
         self.jumps_remaining -= 1
-        # Set the collision flag
         self.colliding = True
         self.collision_timer = 0
         
@@ -95,18 +80,20 @@ class DisappearingPlatform(Platform):
         return self.jumps_remaining <= 0
 
     def update(self, camera_y):
-        # No movement, but update the color based on remaining jumps
+        # Update color based on remaining jumps (example for 2 jumps)
         if self.jumps_remaining == 2:
-            self.color = self.original_color
+             self.color = self.original_color # Or a specific color for 2 jumps left
         elif self.jumps_remaining == 1:
-            self.color = (255, 200, 0)  # Darker yellow
+            # Change color to indicate one jump left, if not already the final color
+            if self.original_color != (200, 150, 0): # Avoid re-coloring if it started dark
+                 self.color = (200, 150, 0) # Darker orange/yellow
+        elif self.jumps_remaining <= 0:
+            # Could make it more transparent or a different color before removal
+            pass # Removal is handled by Map class based on should_remove()
         
-        # Reset collision visualization
         super().update(camera_y)
         
-    def draw(self, screen):
-        # This is now handled by the Map class
-        pass
+    # draw() method removed
         
 class DangerousPlatform(Platform):
     """Platform that causes player to die"""
@@ -115,13 +102,5 @@ class DangerousPlatform(Platform):
         """Initialize dangerous platform"""
         super().__init__(x, y, width, height, color or RED)
     
-    def on_collision(self, player):
-        """Handle collision with player"""
-        # In game.py, we'll trigger game over state
-        self.colliding = True
-        self.collision_timer = 0
-        pass
-
-    def update(self, camera_y):
-        # Reset collision visualization
-        super().update(camera_y) 
+    # on_collision and update are inherited or simple pass-through
+    # draw() method removed 

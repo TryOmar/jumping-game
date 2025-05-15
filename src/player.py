@@ -4,7 +4,7 @@ from src.constants import BLACK, GRAVITY, JUMP_STRENGTH, MOVE_SPEED
 class Player:
     def __init__(self, x, y, radius=15):
         self.x = x
-        self.y = y
+        self.y = y  # World Y coordinate
         self.radius = radius
         self.color = BLACK
         
@@ -21,7 +21,7 @@ class Player:
         self.auto_jump_cooldown = 0
         
     def update(self):
-        """Update player position and physics"""
+        """Update player position and physics (all in world coordinates)"""
         # Apply gravity
         self.vel_y += self.gravity
         
@@ -58,7 +58,7 @@ class Player:
         # Only allow bounce if cooldown is not active
         if self.auto_jump_cooldown <= 0:
             # Increased bounce height significantly
-            bounce_strength = strength if strength is not None else self.jump_strength * 1.2
+            bounce_strength = strength if strength is not None else self.jump_strength * 1.5
             self.vel_y = bounce_strength
             self.is_jumping = True
             self.on_ground = False
@@ -87,10 +87,10 @@ class Player:
         if keys[pygame.K_UP]:
             self.jump()
         
-    def land(self, platform_y):
-        """Called when player lands on a platform"""
+    def land(self, platform_world_y):
+        """Called when player lands on a platform. platform_world_y is the top of the platform in world coordinates."""
         # Prevent player from going through the platform
-        self.y = platform_y - self.radius
+        self.y = platform_world_y - self.radius
         self.vel_y = 0
         self.is_jumping = False
         self.on_ground = True
@@ -98,8 +98,7 @@ class Player:
         # Return True if we need to trigger automatic bounce
         return True
                 
-    def draw(self, screen):
-        """Draw the player"""
-        # Note: Player's coordinates are already in screen space since we move
-        # the player's actual position to compensate for camera movement
-        pygame.draw.circle(screen, self.color, (int(self.x), int(self.y)), self.radius) 
+    def draw(self, screen, camera_y):
+        """Draw the player, converting world coordinates to screen coordinates"""
+        player_screen_y = self.y - camera_y
+        pygame.draw.circle(screen, self.color, (int(self.x), int(player_screen_y)), self.radius) 
