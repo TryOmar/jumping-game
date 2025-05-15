@@ -57,7 +57,8 @@ class Player:
         """Bounce the player (automatic jump when hitting platforms)"""
         # Only allow bounce if cooldown is not active
         if self.auto_jump_cooldown <= 0:
-            bounce_strength = strength if strength is not None else self.jump_strength * 0.8
+            # Increased bounce height (was 0.8)
+            bounce_strength = strength if strength is not None else self.jump_strength * 0.95
             self.vel_y = bounce_strength
             self.is_jumping = True
             self.on_ground = False
