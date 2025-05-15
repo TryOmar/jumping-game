@@ -51,8 +51,9 @@ class Map:
         for platform in self.platforms:
             platform.update()
             
-        # Remove platforms that are below the bottom of the screen
-        self.platforms = [p for p in self.platforms if p.y < SCREEN_HEIGHT - camera_y + 50]
+        # Remove platforms that are below the bottom of the screen with a margin
+        # We add a larger margin (150 instead of 50) to make sure we don't remove platforms that are still visible
+        self.platforms = [p for p in self.platforms if p.y < SCREEN_HEIGHT - camera_y + 150]
         
         # If we're running low on platforms, generate more above
         if len(self.platforms) < PLATFORM_COUNT / 2:
@@ -94,8 +95,8 @@ class Map:
             # Adjust platform position based on camera
             rect = pygame.Rect(platform.x, platform.y - camera_y, platform.width, platform.height)
             
-            # Only draw if on screen
-            if rect.bottom >= 0 and rect.top <= SCREEN_HEIGHT:
+            # Only draw if on screen with a margin (draw platforms slightly offscreen for smoother visual)
+            if rect.bottom >= -50 and rect.top <= SCREEN_HEIGHT + 50:
                 pygame.draw.rect(screen, platform.color, rect)
                 
                 # Draw counter for disappearing platforms
@@ -104,6 +105,23 @@ class Map:
                     text = font.render(str(platform.jumps_remaining), True, (0, 0, 0))
                     screen.blit(text, (rect.centerx - text.get_width()//2, 
                                      rect.centery - text.get_height()//2))
+    
+    # For debugging
+    def draw_platform_info(self, screen, camera_y):
+        """Draw debug information about platforms"""
+        # Draw total platform count
+        font = pygame.font.SysFont(None, 24)
+        text = font.render(f"Platforms: {len(self.platforms)}", True, (0, 0, 0))
+        screen.blit(text, (10, 40))
+        
+        # Draw highest and lowest platform info
+        if self.platforms:
+            highest_y = min([p.y for p in self.platforms])
+            lowest_y = max([p.y for p in self.platforms])
+            text1 = font.render(f"Highest: {highest_y:.0f} (screen: {highest_y - camera_y:.0f})", True, (0, 0, 0))
+            text2 = font.render(f"Lowest: {lowest_y:.0f} (screen: {lowest_y - camera_y:.0f})", True, (0, 0, 0))
+            screen.blit(text1, (10, 70))
+            screen.blit(text2, (10, 100))
             
     def check_collision(self, player):
         # Check if player collides with any platform

@@ -211,9 +211,12 @@ class Game:
         # Draw map
         if self.current_map:
             self.current_map.draw(self.screen, self.camera_y)
+            # Uncomment for debugging platform positions
+            # self.current_map.draw_platform_info(self.screen, self.camera_y)
         
         # Draw player
         if self.player:
+            # Draw the player at its screen position (no need to adjust for camera since we move the player)
             self.player.draw(self.screen)
         
         # Draw score
