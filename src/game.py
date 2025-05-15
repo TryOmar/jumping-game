@@ -1,6 +1,6 @@
 import pygame
 import sys
-from src.constants import WHITE, BLACK, SCREEN_WIDTH, SCREEN_HEIGHT
+from src.constants import WHITE, BLACK, SCREEN_WIDTH, SCREEN_HEIGHT, GREEN, BLUE, YELLOW, RED
 from src.game_state import GameState, StateManager
 from src.player import Player
 from src.map import Map
@@ -464,40 +464,123 @@ class Game:
         pass
     
     def _render_how_to_play(self):
-        """Render instructions screen"""
-        # Fill background
-        self.screen.fill((230, 230, 250))  # Light blue/purple background
+        """Render instructions screen with professional layout and visual aids"""
+        # Background color - soft blue gradient effect
+        self.screen.fill((230, 240, 255))
         
+        # Create a gradient effect (simple version)
+        gradient = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
+        for y in range(0, self.height, 2):
+            alpha = 10 - int(10 * y / self.height)
+            pygame.draw.line(gradient, (70, 130, 180, alpha), (0, y), (self.width, y), 2)
+        self.screen.blit(gradient, (0, 0))
+        
+        # Header with decorative elements
+        header_bg = pygame.Rect(0, 30, self.width, 60)
+        pygame.draw.rect(self.screen, (70, 130, 180, 80), header_bg)
+        pygame.draw.line(self.screen, (70, 130, 180), (20, 95), (self.width - 20, 95), 2)
+
         # Title
-        title_font = pygame.font.SysFont(None, 48)
-        title = title_font.render("How to Play", True, BLACK)
-        self.screen.blit(title, (self.width // 2 - title.get_width() // 2, 50))
-        
-        # Instructions
-        instructions = [
-            "Move LEFT and RIGHT with arrow keys",
-            "Press UP to jump manually (when auto-jump is off)",
-            "Press J to toggle auto-jump mode ON/OFF",
-            "Auto-jump: Player jumps automatically when landing on platforms",
-            "Bounce on platforms to climb higher and score points",
-            "Watch out for red dangerous platforms!",
-            "Yellow platforms will disappear after you bounce on them",
-            "Blue platforms move horizontally",
-            "Don't fall off the bottom of the screen!"
-        ]
-        
-        y_pos = 120
+        title_font = pygame.font.SysFont(None, 56)
+        title = title_font.render("HOW TO PLAY", True, (30, 60, 90))
+        title_shadow = title_font.render("HOW TO PLAY", True, (120, 160, 200))
+        self.screen.blit(title_shadow, (self.width // 2 - title.get_width() // 2 + 2, 44))
+        self.screen.blit(title, (self.width // 2 - title.get_width() // 2, 42))
+
+        # Main content area
+        content_x = 80
+        content_y = 120
+        section_spacing = 30
         line_height = 30
+        
+        # Section font
+        section_font = pygame.font.SysFont(None, 36)
         instruction_font = pygame.font.SysFont(None, 28)
         
-        for line in instructions:
-            text = instruction_font.render(line, True, BLACK)
-            self.screen.blit(text, (self.width // 2 - text.get_width() // 2, y_pos))
-            y_pos += line_height
+        # 1. CONTROLS SECTION
+        controls_title = section_font.render("Controls", True, (30, 60, 90))
+        self.screen.blit(controls_title, (content_x, content_y))
+        pygame.draw.line(self.screen, (100, 150, 200), 
+                         (content_x, content_y + 35), 
+                         (content_x + 200, content_y + 35), 2)
         
-        # Return to main menu
-        back_text = instruction_font.render("Press ESC to return to main menu", True, BLACK)
-        self.screen.blit(back_text, (self.width // 2 - back_text.get_width() // 2, self.height - 50))
+        controls = [
+            "< > Arrow Keys: Move left and right",
+            "^ Arrow Key: Manual jump (when auto-jump is off)",
+            "J Key: Toggle auto-jump ON/OFF",
+            "ESC Key: Pause game / Return to previous screen"
+        ]
+        
+        control_y = content_y + 45
+        for control in controls:
+            text = instruction_font.render(control, True, BLACK)
+            self.screen.blit(text, (content_x + 20, control_y))
+            control_y += line_height
+        
+        # 2. PLATFORMS SECTION
+        platforms_y = control_y + section_spacing
+        platforms_title = section_font.render("Platforms", True, (30, 60, 90))
+        self.screen.blit(platforms_title, (content_x, platforms_y))
+        pygame.draw.line(self.screen, (100, 150, 200), 
+                         (content_x, platforms_y + 35), 
+                         (content_x + 200, platforms_y + 35), 2)
+        
+        # Platform types with visual examples
+        platform_types = [
+            ("Regular Platform", GREEN, "Stable platform to jump on"),
+            ("Moving Platform", BLUE, "Moves horizontally across the screen"),
+            ("Disappearing Platform", YELLOW, "Disappears after jumping on it"),
+            ("Dangerous Platform", RED, "Causes game over - avoid these!")
+        ]
+        
+        platform_y = platforms_y + 45
+        for platform_name, color, description in platform_types:
+            # Draw example platform
+            platform_rect = pygame.Rect(content_x + 20, platform_y, 80, 20)
+            pygame.draw.rect(self.screen, color, platform_rect)
+            pygame.draw.rect(self.screen, BLACK, platform_rect, 2)
+            
+            # Draw platform name and description
+            name_text = instruction_font.render(platform_name, True, BLACK)
+            self.screen.blit(name_text, (content_x + 120, platform_y - 5))
+            
+            desc_font = pygame.font.SysFont(None, 24)
+            desc_text = desc_font.render(description, True, (60, 60, 60))
+            self.screen.blit(desc_text, (content_x + 120, platform_y + 15))
+            
+            platform_y += 50
+        
+        # 3. OBJECTIVES SECTION
+        objectives_y = platform_y + section_spacing
+        objectives_title = section_font.render("Objectives", True, (30, 60, 90))
+        self.screen.blit(objectives_title, (content_x, objectives_y))
+        pygame.draw.line(self.screen, (100, 150, 200), 
+                         (content_x, objectives_y + 35), 
+                         (content_x + 200, objectives_y + 35), 2)
+        
+        objectives = [
+            "• Climb as high as possible by bouncing on platforms",
+            "• Avoid falling off the bottom of the screen",
+            "• Avoid red dangerous platforms",
+            "• Reach the top of the map to complete the level"
+        ]
+        
+        objective_y = objectives_y + 45
+        for objective in objectives:
+            text = instruction_font.render(objective, True, BLACK)
+            self.screen.blit(text, (content_x + 20, objective_y))
+            objective_y += line_height
+        
+        # Footer with return instruction
+        footer_bg = pygame.Rect(0, self.height - 50, self.width, 50)
+        pygame.draw.rect(self.screen, (70, 130, 180, 80), footer_bg)
+        
+        back_text = instruction_font.render("Press ESC to return to main menu", True, (30, 60, 90))
+        self.screen.blit(back_text, (self.width // 2 - back_text.get_width() // 2, self.height - 35))
+        
+        # Page indicator (if we want to add more pages later)
+        page_text = pygame.font.SysFont(None, 20).render("Page 1/1", True, (100, 100, 100))
+        self.screen.blit(page_text, (self.width - 60, self.height - 30))
     
     def handle_platform_effect(self, platform):
         """Handle special effects for different platform types"""
