@@ -3,7 +3,7 @@
 ## 📋 Setup and Project Structure
 - [x] Initialize pygame project with basic window
 - [x] Create main game loop structure
-- [ ] Set up file organization (folders for assets, classes, etc.)
+- [x] Set up file organization (folders for assets, classes, etc.)
 - [ ] Create base game class (state management)
 
 ## 🎮 Core Gameplay
