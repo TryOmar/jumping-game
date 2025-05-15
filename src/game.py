@@ -192,24 +192,35 @@ class Game:
         # Get platforms the player might be colliding with
         colliding_platforms = []
         for platform in self.current_map.platforms:
-            # Ignore platforms we're not falling onto
+            # Only check for collision if we're falling onto a platform
             if self.player.vel_y <= 0:
                 continue
+                
+            # Ensure the player's feet are at or below the top of the platform
+            # This makes the collision detection more forgiving
+            foot_y = self.player.y + self.player.radius
+            if foot_y < platform.y - 2:  # Small tolerance
+                continue
             
-            # IMPORTANT: Platform positions are in world coordinates (same as player)
-            # No need to adjust for camera here since both player and platforms use the same coordinate system
-            # Simple AABB collision detection
+            # Complete collision check - AABB with circle
             if (self.player.y + self.player.radius > platform.y and 
                 self.player.y - self.player.radius < platform.y + platform.height and
                 self.player.x + self.player.radius > platform.x and 
                 self.player.x - self.player.radius < platform.x + platform.width):
-                colliding_platforms.append(platform)
-                platform.colliding = True  # Set collision flag for visualization
+                
+                # Check if the player is falling onto the platform (not rising through it)
+                if foot_y >= platform.y and foot_y <= platform.y + 10:  # 10 pixels of tolerance
+                    colliding_platforms.append(platform)
+                    platform.colliding = True  # Set collision flag for visualization
         
         # Handle collision with the highest platform if there are multiple
         if colliding_platforms:
             # Find the highest platform (lowest y value)
             highest_platform = min(colliding_platforms, key=lambda p: p.y)
+            
+            # Debug info
+            if self.debug_mode:
+                print(f"Collision with platform {highest_platform.id} at world Y: {highest_platform.y}")
             
             # Place player on top of platform and set on_ground
             self.player.land(highest_platform.y)
