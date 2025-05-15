@@ -1,6 +1,6 @@
 import pygame
 import sys
-from src.constants import WHITE, BLACK
+from src.constants import WHITE, BLACK, SCREEN_WIDTH, SCREEN_HEIGHT
 from src.game_state import GameState, StateManager
 from src.player import Player
 from src.map import Map
@@ -54,27 +54,91 @@ class Game:
                     self.state_manager.change_state(GameState.PLAYING)
                     if not self.player:
                         # Create player and map when entering play state
-                        self.player = Player(self.width // 2, self.height - 100)
-                        self.current_map = Map()
+                        self.init_game()
                 elif event.key == pygame.K_3:
                     self.state_manager.change_state(GameState.GAME_OVER, score=100)
+    
+    def init_game(self):
+        """Initialize game objects for a new game"""
+        self.player = Player(self.width // 2, self.height - 100)
+        self.current_map = Map()
+        self.current_map.generate_map()  # Generate initial platforms
+        self.camera_y = 0
+        self.state_manager.set_state_data("score", 0)
     
     def update(self):
         """Update game state"""
         if self.state_manager.is_state(GameState.PLAYING):
             # Only update game objects when in PLAYING state
             if self.player and self.current_map:
-                self.player.update()
-                self.current_map.update(self.camera_y)
+                # Handle player input
+                keys = pygame.key.get_pressed()
+                self.player.handle_input(keys)
                 
-                # Check collisions
-                # self.current_map.check_collision(self.player)
+                # Update player
+                self.player.update()
+                
+                # Check if player is going off screen horizontally (wrap around)
+                if self.player.x < 0:
+                    self.player.x = self.width
+                elif self.player.x > self.width:
+                    self.player.x = 0
+                
+                # Update camera position if player gets too high
+                if self.player.y < self.height // 3:
+                    # Move camera up, move player down relatively
+                    camera_shift = self.height // 3 - self.player.y
+                    self.camera_y -= camera_shift
+                    self.player.y += camera_shift
+                    # Update score based on height
+                    self.state_manager.set_state_data("score", abs(int(self.camera_y)))
+                
+                # Check if player has fallen off the bottom
+                if self.player.y > self.height:
+                    self.state_manager.change_state(GameState.GAME_OVER, 
+                                                 score=abs(int(self.camera_y)), 
+                                                 reason="Fall")
+                
+                # Update map and check collisions
+                self.current_map.update(self.camera_y)
+                self.check_platform_collisions()
                 
                 # Check if player has reached target height
-                # if self.camera_y <= self.current_map.target_height:
-                #     self.state_manager.change_state(GameState.GAME_OVER, 
-                #                                     score=abs(int(self.camera_y)), 
-                #                                     reason="Victory")
+                if self.camera_y <= self.current_map.target_height:
+                    self.state_manager.change_state(GameState.GAME_OVER, 
+                                                 score=abs(int(self.camera_y)), 
+                                                 reason="Victory")
+    
+    def check_platform_collisions(self):
+        """Check for collisions between player and platforms"""
+        # Only check if player is moving downward (falling)
+        if self.player.vel_y > 0:
+            for platform in self.current_map.platforms:
+                # Simple AABB collision for now
+                if (self.player.y + self.player.radius > platform.y and 
+                    self.player.y - self.player.radius < platform.y + platform.height and
+                    self.player.x + self.player.radius > platform.x and 
+                    self.player.x - self.player.radius < platform.x + platform.width):
+                    
+                    # Only collide if we're above the platform
+                    if self.player.y - self.player.radius < platform.y:
+                        # Check platform type and respond accordingly
+                        if platform.__class__.__name__ == "DangerousPlatform":
+                            # Game over on dangerous platform
+                            self.state_manager.change_state(GameState.GAME_OVER, 
+                                                        score=abs(int(self.camera_y)), 
+                                                        reason="Danger")
+                            return
+                        elif platform.__class__.__name__ == "DisappearingPlatform":
+                            # Handle disappearing platform
+                            platform.jumps_remaining -= 1
+                            if platform.jumps_remaining <= 0:
+                                self.current_map.platforms.remove(platform)
+                        
+                        # Land on platform and bounce
+                        if self.player.land(platform.y):
+                            self.player.bounce()
+                            return  # Only bounce on one platform
     
     def render(self):
         """Draw everything to the screen"""
