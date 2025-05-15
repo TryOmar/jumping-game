@@ -68,7 +68,8 @@
 - [ ] Test all game mechanics
 - [ ] Balance difficulty across maps
 - [ ] Fix bugs and glitches
-- [ ] Optimize performance
+- [x] Optimize performance
+- [x] Refactor code for maintainability
 - [ ] Add final polish and refinements
 
 ## 🏁 Final Steps

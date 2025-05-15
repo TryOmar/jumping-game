@@ -1,0 +1,130 @@
+import pygame
+from src.game_state import GameState
+
+class EventHandler:
+    def __init__(self, game):
+        self.game = game
+    
+    def handle_events(self):
+        """Process all game events"""
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.game.running = False
+                
+            # Process keyboard events
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    # Escape behaves differently based on state
+                    if self.game.state_manager.is_state(GameState.PLAYING):
+                        self.game.state_manager.change_state(GameState.PAUSED)
+                    elif self.game.state_manager.is_state(GameState.PAUSED):
+                        self.game.state_manager.change_state(GameState.PLAYING)
+                    elif self.game.state_manager.is_state(GameState.MAIN_MENU):
+                        self.game.running = False
+                    elif self.game.state_manager.is_state(GameState.MAP_SELECT):
+                        # Return to main menu when on map selection screen
+                        self.game.state_manager.change_state(GameState.MAIN_MENU)
+                    else:
+                        self.game.state_manager.return_to_previous()
+                
+                # Toggle debug mode with F1
+                if event.key == pygame.K_F1:
+                    self.game.toggle_debug()
+                
+                # Toggle auto-jump with J key
+                if event.key == pygame.K_j and self.game.player:
+                    enabled = self.game.player.toggle_auto_jump()
+                    status = "enabled" if enabled else "disabled"
+                    print(f"Auto-jump {status}")
+                    
+                    # Add visual feedback when auto-jump is toggled
+                    self.game.show_auto_jump_message = True
+                    self.game.auto_jump_message_time = pygame.time.get_ticks()
+                    self.game.auto_jump_status = enabled
+                
+                # Main menu controls
+                if self.game.state_manager.is_state(GameState.MAIN_MENU):
+                    if event.key == pygame.K_UP:
+                        self.game.selected_option = max(0, self.game.selected_option - 1)
+                    elif event.key == pygame.K_DOWN:
+                        self.game.selected_option = min(len(self.game.menu_options) - 1, self.game.selected_option + 1)
+                    elif event.key == pygame.K_RETURN:
+                        self._handle_menu_selection()
+                
+                # Temporary state change keys for testing
+                if event.key == pygame.K_1:
+                    self.game.state_manager.change_state(GameState.MAIN_MENU)
+                elif event.key == pygame.K_2:
+                    # Always reinitialize the game when starting a new game
+                    self.game.state_manager.change_state(GameState.PLAYING)
+                    self.game.init_game()
+                elif event.key == pygame.K_3:
+                    self.game.state_manager.change_state(GameState.GAME_OVER, score=100)
+            
+            # Handle mouse events for menu
+            if self.game.state_manager.is_state(GameState.MAIN_MENU):
+                if event.type == pygame.MOUSEMOTION:
+                    # Check if mouse is over any menu option
+                    mouse_pos = pygame.mouse.get_pos()
+                    for i, option in enumerate(self.game.menu_options):
+                        option_rect = self._get_menu_option_rect(i)
+                        if option_rect.collidepoint(mouse_pos):
+                            self.game.selected_option = i
+                            break
+                
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # Left click
+                    # Check if clicking on a menu option
+                    mouse_pos = pygame.mouse.get_pos()
+                    for i, option in enumerate(self.game.menu_options):
+                        option_rect = self._get_menu_option_rect(i)
+                        if option_rect.collidepoint(mouse_pos):
+                            self.game.selected_option = i
+                            self._handle_menu_selection()
+                            break
+            
+            # Handle mouse events for map selection screen
+            elif self.game.state_manager.is_state(GameState.MAP_SELECT):
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # Left click
+                    mouse_pos = pygame.mouse.get_pos()
+                    
+                    # Check if the user clicked on the Official Maps button
+                    if hasattr(self.game, 'map_selection_buttons'):
+                        if self.game.map_selection_buttons["official"].collidepoint(mouse_pos):
+                            print("Official Maps selected")
+                            # For now, just show available maps or start Map 1
+                            # Later this could lead to a more detailed official maps screen
+                            
+                        elif self.game.map_selection_buttons["custom"].collidepoint(mouse_pos):
+                            print("Custom Maps selected")
+                            # This would lead to custom map creation or selection
+                            # For now just show a message
+                            
+                        elif self.game.map_selection_buttons["map1"].collidepoint(mouse_pos):
+                            print("Map 1 selected")
+                            # Start the game with Map 1
+                            self.game.state_manager.change_state(GameState.PLAYING)
+                            self.game.init_game()
+    
+    def _handle_menu_selection(self):
+        """Handle menu option selection"""
+        if self.game.selected_option == 0:  # Play
+            # Changed to show map selection instead of directly starting the game
+            self.game.state_manager.change_state(GameState.MAP_SELECT)
+        elif self.game.selected_option == 1:  # How to Play
+            self.game.state_manager.change_state(GameState.HOW_TO_PLAY)
+        elif self.game.selected_option == 2:  # Settings
+            self.game.state_manager.change_state(GameState.SETTINGS)
+        elif self.game.selected_option == 3:  # Exit
+            self.game.running = False
+    
+    def _get_menu_option_rect(self, index):
+        """Get the rectangle for a menu option for collision detection"""
+        option_height = 40
+        start_y = self.game.height // 2
+        option_y = start_y + index * option_height
+        
+        # Approximate width based on text length
+        option_width = len(self.game.menu_options[index]) * 20
+        option_x = self.game.width // 2 - option_width // 2
+        
+        return pygame.Rect(option_x, option_y, option_width, option_height) 
