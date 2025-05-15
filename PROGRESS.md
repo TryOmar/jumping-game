@@ -37,7 +37,7 @@
 - [ ] Implement color themes for each map
 
 ## 🖼️ UI and Menus
-- [ ] Create main menu screen
+- [x] Create main menu screen
 - [ ] Implement map selection menu
 - [ ] Add "How to Play" instructions screen
 - [ ] Design and implement in-game HUD:

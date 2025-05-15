@@ -28,6 +28,10 @@ class Game:
         # Debug mode
         self.debug_mode = False
         
+        # Menu options
+        self.menu_options = ["Play", "How to Play", "Settings", "Exit"]
+        self.selected_option = 0
+        
         # Game state
         self.running = True
         
@@ -54,16 +58,69 @@ class Game:
                 if event.key == pygame.K_F1:
                     self.debug_mode = not self.debug_mode
                 
+                # Main menu controls
+                if self.state_manager.is_state(GameState.MAIN_MENU):
+                    if event.key == pygame.K_UP:
+                        self.selected_option = max(0, self.selected_option - 1)
+                    elif event.key == pygame.K_DOWN:
+                        self.selected_option = min(len(self.menu_options) - 1, self.selected_option + 1)
+                    elif event.key == pygame.K_RETURN:
+                        self._handle_menu_selection()
+                
                 # Temporary state change keys for testing
                 if event.key == pygame.K_1:
                     self.state_manager.change_state(GameState.MAIN_MENU)
                 elif event.key == pygame.K_2:
+                    # Always reinitialize the game when starting a new game
                     self.state_manager.change_state(GameState.PLAYING)
-                    if not self.player:
-                        # Create player and map when entering play state
-                        self.init_game()
+                    self.init_game()
                 elif event.key == pygame.K_3:
                     self.state_manager.change_state(GameState.GAME_OVER, score=100)
+            
+            # Handle mouse events for menu
+            if self.state_manager.is_state(GameState.MAIN_MENU):
+                if event.type == pygame.MOUSEMOTION:
+                    # Check if mouse is over any menu option
+                    mouse_pos = pygame.mouse.get_pos()
+                    for i, option in enumerate(self.menu_options):
+                        option_rect = self._get_menu_option_rect(i)
+                        if option_rect.collidepoint(mouse_pos):
+                            self.selected_option = i
+                            break
+                
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # Left click
+                    # Check if clicking on a menu option
+                    mouse_pos = pygame.mouse.get_pos()
+                    for i, option in enumerate(self.menu_options):
+                        option_rect = self._get_menu_option_rect(i)
+                        if option_rect.collidepoint(mouse_pos):
+                            self.selected_option = i
+                            self._handle_menu_selection()
+                            break
+    
+    def _handle_menu_selection(self):
+        """Handle menu option selection"""
+        if self.selected_option == 0:  # Play
+            self.state_manager.change_state(GameState.PLAYING)
+            self.init_game()
+        elif self.selected_option == 1:  # How to Play
+            self.state_manager.change_state(GameState.HOW_TO_PLAY)
+        elif self.selected_option == 2:  # Settings
+            self.state_manager.change_state(GameState.SETTINGS)
+        elif self.selected_option == 3:  # Exit
+            self.running = False
+    
+    def _get_menu_option_rect(self, index):
+        """Get the rectangle for a menu option for collision detection"""
+        option_height = 40
+        start_y = self.height // 2
+        option_y = start_y + index * option_height
+        
+        # Approximate width based on text length
+        option_width = len(self.menu_options[index]) * 20
+        option_x = self.width // 2 - option_width // 2
+        
+        return pygame.Rect(option_x, option_y, option_width, option_height)
     
     def init_game(self):
         """Initialize game objects for a new game"""
@@ -202,18 +259,53 @@ class Game:
     
     def _render_main_menu(self):
         """Render the main menu screen"""
-        # Temp rectangle to show it's the main menu
-        pygame.draw.rect(self.screen, BLACK, (self.width//2 - 100, self.height//2 - 100, 200, 200))
+        # Draw background
+        background_color = (50, 100, 150)  # Nice blue background
+        self.screen.fill(background_color)
         
-        # Render text (will be improved later)
-        font = pygame.font.SysFont(None, 48)
-        text = font.render("MAIN MENU", True, WHITE)
-        self.screen.blit(text, (self.width//2 - text.get_width()//2, self.height//2 - text.get_height()//2))
+        # Draw game title
+        title_font = pygame.font.SysFont(None, 72)
+        title_text = title_font.render("JUMPING BALL", True, WHITE)
+        self.screen.blit(title_text, (self.width//2 - title_text.get_width()//2, 100))
         
-        # Instructions
-        font_small = pygame.font.SysFont(None, 24)
-        text = font_small.render("Press 2 to start game, ESC to exit", True, WHITE)
-        self.screen.blit(text, (self.width//2 - text.get_width()//2, self.height//2 + 50))
+        # Draw decorative circles
+        pygame.draw.circle(self.screen, BLACK, (self.width//2, 200), 30)
+        pygame.draw.circle(self.screen, (200, 200, 0), (self.width//2 - 80, 220), 15)
+        pygame.draw.circle(self.screen, (0, 200, 200), (self.width//2 + 80, 220), 15)
+        
+        # Draw menu options
+        option_height = 40
+        start_y = self.height // 2
+        
+        for i, option in enumerate(self.menu_options):
+            # Determine if this option is selected
+            is_selected = (i == self.selected_option)
+            
+            # Choose font color based on selection
+            color = BLACK if not is_selected else (255, 0, 0)
+            
+            # Create option text
+            option_font = pygame.font.SysFont(None, 36)
+            option_text = option_font.render(option, True, color)
+            
+            # Draw option text
+            option_y = start_y + i * option_height
+            option_x = self.width//2 - option_text.get_width()//2
+            self.screen.blit(option_text, (option_x, option_y))
+            
+            # Draw indicator if selected
+            if is_selected:
+                # Draw arrow or highlight
+                pygame.draw.polygon(self.screen, (255, 0, 0), [
+                    (option_x - 20, option_y + option_text.get_height()//2),
+                    (option_x - 10, option_y + option_text.get_height()//2 - 5),
+                    (option_x - 10, option_y + option_text.get_height()//2 + 5),
+                ])
+        
+        # Draw footer text
+        footer_font = pygame.font.SysFont(None, 20)
+        footer_text = footer_font.render("Use arrow keys to select, Enter to confirm", True, WHITE)
+        self.screen.blit(footer_text, (self.width//2 - footer_text.get_width()//2, self.height - 50))
     
     def _render_map_select(self):
         """Render the map selection screen"""
@@ -289,8 +381,10 @@ class Game:
         
         # Instructions
         font_small = pygame.font.SysFont(None, 24)
-        text = font_small.render("Press 1 to return to main menu", True, BLACK)
-        self.screen.blit(text, (self.width//2 - text.get_width()//2, self.height//2 + 100))
+        text1 = font_small.render("Press 1 to return to main menu", True, BLACK)
+        text2 = font_small.render("Press 2 to play again", True, BLACK)
+        self.screen.blit(text1, (self.width//2 - text1.get_width()//2, self.height//2 + 80))
+        self.screen.blit(text2, (self.width//2 - text2.get_width()//2, self.height//2 + 110))
     
     def _render_settings(self):
         """Render settings screen"""
