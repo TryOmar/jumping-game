@@ -8,10 +8,18 @@ class Platform:
         self.width = width
         self.height = height
         self.color = GREEN
+        self.is_colliding = False
+        self.collision_timer = 0
         
     def update(self):
         # Base platforms don't move
-        pass
+        
+        # Reset collision visualization after a few frames
+        if self.is_colliding:
+            self.collision_timer += 1
+            if self.collision_timer > 5:  # Reset after 5 frames
+                self.is_colliding = False
+                self.collision_timer = 0
         
     def draw(self, screen):
         # This is handled by the Map class now
@@ -43,6 +51,9 @@ class MovingPlatform(Platform):
         elif self.x + self.width > SCREEN_WIDTH:
             self.x = SCREEN_WIDTH - self.width
             self.direction = -1
+            
+        # Reset collision visualization
+        super().update()
         
     def draw(self, screen):
         # Draw the platform
@@ -53,11 +64,17 @@ class DisappearingPlatform(Platform):
         super().__init__(x, y, width, height)
         self.color = YELLOW
         self.jumps_remaining = jump_limit
+        self.original_color = YELLOW
         
     def update(self):
-        # No movement, but will be removed after jumps_remaining reaches 0
-        # This is handled in the Game's collision detection
-        pass
+        # No movement, but update the color based on remaining jumps
+        if self.jumps_remaining == 2:
+            self.color = YELLOW
+        elif self.jumps_remaining == 1:
+            self.color = (255, 200, 0)  # Darker yellow
+        
+        # Reset collision visualization
+        super().update()
         
     def draw(self, screen):
         # This is now handled by the Map class
@@ -66,4 +83,8 @@ class DisappearingPlatform(Platform):
 class DangerousPlatform(Platform):
     def __init__(self, x, y, width=100, height=10):
         super().__init__(x, y, width, height)
-        self.color = RED 
+        self.color = RED
+        
+    def update(self):
+        # Reset collision visualization
+        super().update() 

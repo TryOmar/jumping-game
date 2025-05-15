@@ -20,16 +20,26 @@ class Map:
         start_platform = Platform(SCREEN_WIDTH // 2 - 50, SCREEN_HEIGHT - 50, width=100)
         self.platforms.append(start_platform)
         
-        # Generate random platforms going upward
+        # Generate initial platforms going upward with smaller, more consistent gaps
+        vertical_gap = 70  # Fixed vertical gap between platforms
         for i in range(PLATFORM_COUNT):
-            # Random placement - ensure some vertical spacing
-            x = random.randint(10, SCREEN_WIDTH - 110)
-            y = SCREEN_HEIGHT - 100 - i * (SCREEN_HEIGHT / PLATFORM_COUNT)
+            # Calculate y position with fixed spacing
+            y = SCREEN_HEIGHT - 100 - i * vertical_gap
+            
+            # Ensure good horizontal distribution
+            # Divide screen into sections for better distribution
+            section_width = SCREEN_WIDTH // 3
+            section = i % 3  # 0, 1, or 2
+            
+            # Random x within the section to ensure platforms across the screen
+            min_x = section * section_width + 20
+            max_x = (section + 1) * section_width - 120
+            x = random.randint(min_x, max_x)
             
             # Randomize platform type with weights
             platform_type = random.choices(
                 ["regular", "moving", "disappearing", "dangerous"],
-                weights=[0.6, 0.2, 0.15, 0.05],
+                weights=[0.65, 0.2, 0.1, 0.05],
                 k=1
             )[0]
             
@@ -52,52 +62,86 @@ class Map:
             platform.update()
             
         # Remove platforms that are below the bottom of the screen with a margin
-        # We add a larger margin (150 instead of 50) to make sure we don't remove platforms that are still visible
-        self.platforms = [p for p in self.platforms if p.y < SCREEN_HEIGHT - camera_y + 150]
+        # Only remove platforms that are definitely off-screen
+        self.platforms = [p for p in self.platforms if p.y < SCREEN_HEIGHT - camera_y + 200]
         
-        # If we're running low on platforms, generate more above
-        if len(self.platforms) < PLATFORM_COUNT / 2:
-            self.generate_more_platforms(camera_y)
+        # Find the highest platform
+        if self.platforms:
+            highest_y = min([p.y for p in self.platforms])
+            # Always maintain platforms within the visible range and above
+            # Ensure there are platforms being generated before they're needed
+            screen_top = camera_y
+            if highest_y > screen_top - SCREEN_HEIGHT:
+                self.generate_more_platforms(camera_y)
     
     def generate_more_platforms(self, camera_y):
         """Generate additional platforms as the player moves up"""
         # Find the highest platform
         highest_y = min([p.y for p in self.platforms]) if self.platforms else SCREEN_HEIGHT
         
-        # Generate new platforms above the highest one
-        for i in range(5):  # Add 5 new platforms
-            # Random placement with spacing
-            x = random.randint(10, SCREEN_WIDTH - 110)
-            y = highest_y - 100 - i * 100
+        # Generate more platforms with fixed spacing
+        vertical_gap = 70  # Same as in generate_map
+        platform_count = 8  # Generate more platforms at once for better coverage
+        
+        for i in range(platform_count):
+            # Position each new platform above the highest one with fixed gap
+            y = highest_y - (i + 1) * vertical_gap
             
-            # Randomize platform type with weights
+            # Ensure good horizontal distribution
+            section_width = SCREEN_WIDTH // 3
+            section = i % 3  # 0, 1, or 2
+            
+            min_x = section * section_width + 20
+            max_x = (section + 1) * section_width - 120
+            x = random.randint(min_x, max_x)
+            
+            # Slightly different weights - more stable platforms higher up
             platform_type = random.choices(
                 ["regular", "moving", "disappearing", "dangerous"],
-                weights=[0.6, 0.2, 0.15, 0.05],
+                weights=[0.65, 0.2, 0.1, 0.05],
                 k=1
             )[0]
             
+            # Create platform with consistent width
+            platform_width = random.randint(80, 120)  # Vary width slightly
+            
             # Create the appropriate platform type
             if platform_type == "regular":
-                platform = Platform(x, y)
+                platform = Platform(x, y, width=platform_width)
             elif platform_type == "moving":
-                platform = MovingPlatform(x, y, move_speed=self.platform_speed)
+                platform = MovingPlatform(x, y, width=platform_width, move_speed=self.platform_speed)
             elif platform_type == "disappearing":
-                platform = DisappearingPlatform(x, y)
+                platform = DisappearingPlatform(x, y, width=platform_width)
             elif platform_type == "dangerous":
-                platform = DangerousPlatform(x, y)
+                platform = DangerousPlatform(x, y, width=platform_width)
             
             self.platforms.append(platform)
             
     def draw(self, screen, camera_y):
         """Draw all platforms with camera offset"""
         for platform in self.platforms:
-            # Adjust platform position based on camera
-            rect = pygame.Rect(platform.x, platform.y - camera_y, platform.width, platform.height)
+            # Calculate screen position
+            screen_y = platform.y - camera_y
             
-            # Only draw if on screen with a margin (draw platforms slightly offscreen for smoother visual)
-            if rect.bottom >= -50 and rect.top <= SCREEN_HEIGHT + 50:
-                pygame.draw.rect(screen, platform.color, rect)
+            # Create rectangle for drawing
+            rect = pygame.Rect(platform.x, screen_y, platform.width, platform.height)
+            
+            # Draw with more generous margin to ensure visibility
+            if rect.bottom >= -100 and rect.top <= SCREEN_HEIGHT + 100:
+                # Determine platform color (flash if colliding in debug mode)
+                color = platform.color
+                border_color = (0, 0, 0)  # Default black border
+                
+                # If platform is colliding, highlight it
+                if platform.is_colliding:
+                    border_color = (255, 255, 255)  # White border
+                    # Draw a halo around the platform
+                    halo_rect = rect.inflate(4, 4)
+                    pygame.draw.rect(screen, (255, 255, 255), halo_rect)
+                
+                # Draw platform with a border
+                pygame.draw.rect(screen, color, rect)
+                pygame.draw.rect(screen, border_color, rect, 1)
                 
                 # Draw counter for disappearing platforms
                 if isinstance(platform, DisappearingPlatform) and platform.jumps_remaining > 0:

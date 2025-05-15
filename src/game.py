@@ -25,6 +25,9 @@ class Game:
         self.current_map = None
         self.camera_y = 0
         
+        # Debug mode
+        self.debug_mode = False
+        
         # Game state
         self.running = True
         
@@ -46,6 +49,10 @@ class Game:
                         self.running = False
                     else:
                         self.state_manager.return_to_previous()
+                
+                # Toggle debug mode with F1
+                if event.key == pygame.K_F1:
+                    self.debug_mode = not self.debug_mode
                 
                 # Temporary state change keys for testing
                 if event.key == pygame.K_1:
@@ -114,14 +121,21 @@ class Game:
         # Only check if player is moving downward (falling)
         if self.player.vel_y > 0:
             for platform in self.current_map.platforms:
-                # Simple AABB collision for now
-                if (self.player.y + self.player.radius > platform.y and 
-                    self.player.y - self.player.radius < platform.y + platform.height and
+                # Calculate platform's screen position for clarity
+                platform_screen_y = platform.y
+                
+                # Simple AABB collision detection
+                if (self.player.y + self.player.radius > platform_screen_y and 
+                    self.player.y - self.player.radius < platform_screen_y + platform.height and
                     self.player.x + self.player.radius > platform.x and 
                     self.player.x - self.player.radius < platform.x + platform.width):
                     
-                    # Only collide if we're above the platform
-                    if self.player.y - self.player.radius < platform.y:
+                    # Only collide if we're above the platform (to prevent side collisions)
+                    if self.player.y < platform_screen_y:
+                        # Flash the platform in debug mode to show collision
+                        if self.debug_mode:
+                            platform.is_colliding = True
+                        
                         # Check platform type and respond accordingly
                         if platform.__class__.__name__ == "DangerousPlatform":
                             # Game over on dangerous platform
@@ -136,7 +150,7 @@ class Game:
                                 self.current_map.platforms.remove(platform)
                         
                         # Land on platform and bounce
-                        if self.player.land(platform.y):
+                        if self.player.land(platform_screen_y):
                             self.player.bounce()
                             return  # Only bounce on one platform
     
@@ -211,19 +225,37 @@ class Game:
         # Draw map
         if self.current_map:
             self.current_map.draw(self.screen, self.camera_y)
-            # Uncomment for debugging platform positions
-            # self.current_map.draw_platform_info(self.screen, self.camera_y)
+            # Show debug info if enabled
+            if self.debug_mode:
+                self.current_map.draw_platform_info(self.screen, self.camera_y)
+                
+                # Draw camera position
+                font = pygame.font.SysFont(None, 24)
+                text = font.render(f"Camera Y: {self.camera_y:.0f}", True, BLACK)
+                self.screen.blit(text, (10, 130))
         
         # Draw player
         if self.player:
             # Draw the player at its screen position (no need to adjust for camera since we move the player)
             self.player.draw(self.screen)
+            
+            # In debug mode, show player position and velocity
+            if self.debug_mode:
+                font = pygame.font.SysFont(None, 24)
+                text = font.render(f"Player: ({self.player.x:.0f}, {self.player.y:.0f}) Vel: ({self.player.vel_x:.1f}, {self.player.vel_y:.1f})", True, BLACK)
+                self.screen.blit(text, (10, 160))
         
         # Draw score
         font = pygame.font.SysFont(None, 36)
         score = self.state_manager.get_state_data("score")
         text = font.render(f"Score: {score}", True, BLACK)
         self.screen.blit(text, (10, 10))
+        
+        # Show debug mode indicator
+        if self.debug_mode:
+            font = pygame.font.SysFont(None, 24)
+            text = font.render("DEBUG MODE (F1 to toggle)", True, (255, 0, 0))
+            self.screen.blit(text, (self.width - text.get_width() - 10, 10))
     
     def _render_pause_menu(self):
         """Render pause menu overlay"""
