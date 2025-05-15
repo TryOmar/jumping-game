@@ -4,6 +4,7 @@ from src.constants import WHITE, BLACK, SCREEN_WIDTH, SCREEN_HEIGHT
 from src.game_state import GameState, StateManager
 from src.player import Player
 from src.map import Map
+from src.platform import Platform, MovingPlatform, DisappearingPlatform, DangerousPlatform
 
 class Game:
     def __init__(self, width=800, height=600, fps=60):
@@ -56,7 +57,7 @@ class Game:
                 
                 # Toggle debug mode with F1
                 if event.key == pygame.K_F1:
-                    self.debug_mode = not self.debug_mode
+                    self.toggle_debug()
                 
                 # Main menu controls
                 if self.state_manager.is_state(GameState.MAIN_MENU):
@@ -152,8 +153,14 @@ class Game:
                 if self.player.y < self.height // 3:
                     # Move camera up, move player down relatively
                     camera_shift = self.height // 3 - self.player.y
-                    self.camera_y -= camera_shift
-                    self.player.y += camera_shift
+                    
+                    # IMPORTANT: This is the key to our coordinate system
+                    # We move both the camera up and the player down by the same amount
+                    # This keeps the player in the same visual position on screen
+                    # while changing both the world coordinate systems
+                    self.camera_y -= camera_shift  # Move camera up (negative y is up)
+                    self.player.y += camera_shift  # Move player down to compensate
+                    
                     # Update score based on height
                     self.state_manager.set_state_data("score", abs(int(self.camera_y)))
                 
@@ -175,41 +182,48 @@ class Game:
     
     def check_platform_collisions(self):
         """Check for collisions between player and platforms"""
-        # Only check if player is moving downward (falling)
-        if self.player.vel_y > 0:
-            for platform in self.current_map.platforms:
-                # Calculate platform's screen position for clarity
-                platform_screen_y = platform.y
-                
-                # Simple AABB collision detection
-                if (self.player.y + self.player.radius > platform_screen_y and 
-                    self.player.y - self.player.radius < platform_screen_y + platform.height and
-                    self.player.x + self.player.radius > platform.x and 
-                    self.player.x - self.player.radius < platform.x + platform.width):
-                    
-                    # Only collide if we're above the platform (to prevent side collisions)
-                    if self.player.y < platform_screen_y:
-                        # Flash the platform in debug mode to show collision
-                        if self.debug_mode:
-                            platform.is_colliding = True
-                        
-                        # Check platform type and respond accordingly
-                        if platform.__class__.__name__ == "DangerousPlatform":
-                            # Game over on dangerous platform
-                            self.state_manager.change_state(GameState.GAME_OVER, 
-                                                        score=abs(int(self.camera_y)), 
-                                                        reason="Danger")
-                            return
-                        elif platform.__class__.__name__ == "DisappearingPlatform":
-                            # Handle disappearing platform
-                            platform.jumps_remaining -= 1
-                            if platform.jumps_remaining <= 0:
-                                self.current_map.platforms.remove(platform)
-                        
-                        # Land on platform and bounce
-                        if self.player.land(platform_screen_y):
-                            self.player.bounce()
-                            return  # Only bounce on one platform
+        if not self.player or not self.current_map:
+            return
+
+        # Reset all platform collision flags
+        for platform in self.current_map.platforms:
+            platform.colliding = False
+
+        # Get platforms the player might be colliding with
+        colliding_platforms = []
+        for platform in self.current_map.platforms:
+            # Ignore platforms we're not falling onto
+            if self.player.vel_y <= 0:
+                continue
+            
+            # IMPORTANT: Platform positions are in world coordinates (same as player)
+            # No need to adjust for camera here since both player and platforms use the same coordinate system
+            # Simple AABB collision detection
+            if (self.player.y + self.player.radius > platform.y and 
+                self.player.y - self.player.radius < platform.y + platform.height and
+                self.player.x + self.player.radius > platform.x and 
+                self.player.x - self.player.radius < platform.x + platform.width):
+                colliding_platforms.append(platform)
+                platform.colliding = True  # Set collision flag for visualization
+        
+        # Handle collision with the highest platform if there are multiple
+        if colliding_platforms:
+            # Find the highest platform (lowest y value)
+            highest_platform = min(colliding_platforms, key=lambda p: p.y)
+            
+            # Place player on top of platform and set on_ground
+            self.player.land(highest_platform.y)
+            
+            # Handle platform special effects
+            self.handle_platform_effect(highest_platform)
+    
+    def toggle_debug(self):
+        """Toggle debug visualization"""
+        self.debug_mode = not self.debug_mode
+        
+        # Also pass debug mode to map
+        if self.current_map:
+            self.current_map.debug_mode = self.debug_mode
     
     def render(self):
         """Draw everything to the screen"""
@@ -325,6 +339,10 @@ class Game:
                 font = pygame.font.SysFont(None, 24)
                 text = font.render(f"Camera Y: {self.camera_y:.0f}", True, BLACK)
                 self.screen.blit(text, (10, 130))
+                
+                # Draw coordinate system explanation
+                coord_text = font.render("Coordinates: World → Screen (Y - Camera Y)", True, BLACK)
+                self.screen.blit(coord_text, (10, 190))
         
         # Draw player
         if self.player:
@@ -336,6 +354,10 @@ class Game:
                 font = pygame.font.SysFont(None, 24)
                 text = font.render(f"Player: ({self.player.x:.0f}, {self.player.y:.0f}) Vel: ({self.player.vel_x:.1f}, {self.player.vel_y:.1f})", True, BLACK)
                 self.screen.blit(text, (10, 160))
+                
+                # Show player jump state
+                jump_text = font.render(f"On Ground: {self.player.on_ground} | Is Jumping: {self.player.is_jumping} | Cooldown: {self.player.auto_jump_cooldown}", True, BLACK)
+                self.screen.blit(jump_text, (10, 220))
         
         # Draw score
         font = pygame.font.SysFont(None, 36)
@@ -394,4 +416,23 @@ class Game:
     def _render_how_to_play(self):
         """Render instructions screen"""
         # Will be implemented later
-        pass 
+        pass
+    
+    def handle_platform_effect(self, platform):
+        """Handle special effects for different platform types"""
+        # Call the platform's collision handler
+        platform.on_collision(self.player)
+        
+        # Make the player bounce
+        self.player.bounce()
+        
+        # Handle platform type specific effects
+        if isinstance(platform, DangerousPlatform):
+            # Game over on dangerous platform
+            self.state_manager.change_state(GameState.GAME_OVER, 
+                                         score=abs(int(self.camera_y)), 
+                                         reason="Danger")
+        elif isinstance(platform, DisappearingPlatform):
+            # Check if platform should be removed
+            if platform.should_remove():
+                self.current_map.platforms.remove(platform) 

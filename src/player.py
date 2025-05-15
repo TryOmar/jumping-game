@@ -100,4 +100,6 @@ class Player:
                 
     def draw(self, screen):
         """Draw the player"""
+        # Note: Player's coordinates are already in screen space since we move
+        # the player's actual position to compensate for camera movement
         pygame.draw.circle(screen, self.color, (int(self.x), int(self.y)), self.radius) 
