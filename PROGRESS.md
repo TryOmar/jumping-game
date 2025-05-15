@@ -40,7 +40,7 @@
 ## 🖼️ UI and Menus
 - [x] Create main menu screen
 - [ ] Implement map selection menu
-- [ ] Add "How to Play" instructions screen
+- [x] Add "How to Play" instructions screen
 - [ ] Design and implement in-game HUD:
   - [ ] Score counter
   - [ ] Floating object hit counters
