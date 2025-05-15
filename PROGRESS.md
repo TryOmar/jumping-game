@@ -1,8 +1,8 @@
 # 🕹️ Jumping Ball Game - Progress Tracker
 
 ## 📋 Setup and Project Structure
-- [ ] Initialize pygame project with basic window
-- [ ] Create main game loop structure
+- [x] Initialize pygame project with basic window
+- [x] Create main game loop structure
 - [ ] Set up file organization (folders for assets, classes, etc.)
 - [ ] Create base game class (state management)
 
