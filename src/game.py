@@ -9,6 +9,7 @@ from src.renderers.base_renderer import BaseRenderer
 from src.event_handler import EventHandler
 from src.collision_handler import CollisionHandler
 from src.config.settings import get_setting, update_setting
+from src.sound_manager import SoundManager
 
 class Game:
     def __init__(self, width=800, height=600, fps=60):
@@ -35,7 +36,10 @@ class Game:
         self.current_map = None
         self.camera_y = 0
         
-        # Audio settings
+        # Initialize sound manager
+        self.sound_manager = SoundManager(self)
+        
+        # Setup audio with settings
         self.setup_audio()
         
         # Debug mode
@@ -67,17 +71,32 @@ class Game:
     
     def setup_audio(self):
         """Setup audio system with current settings"""
-        # Get volume settings
+        # Get volume settings from user settings
         master_volume = get_setting('AUDIO', 'master_volume', 1.0)
         sfx_volume = get_setting('AUDIO', 'sfx_volume', 1.0)
         music_volume = get_setting('AUDIO', 'music_volume', 0.7)
         
-        # Set global volumes
-        pygame.mixer.music.set_volume(music_volume * master_volume)
+        # Apply settings to sound manager
+        self.sound_manager.update_volume(
+            master=master_volume,
+            sfx=sfx_volume,
+            music=music_volume
+        )
         
-        # Store sounds dictionary (to be filled when sounds are loaded)
-        self.sounds = {}
+        # Apply music settings
+        music_enabled = get_setting('AUDIO', 'music_enabled', True)
+        sfx_enabled = get_setting('AUDIO', 'sfx_enabled', True)
         
+        if not music_enabled:
+            self.sound_manager.music_enabled = False
+        
+        if not sfx_enabled:
+            self.sound_manager.sfx_enabled = False
+        
+        # Start background music if in menu
+        if self.state_manager.is_state(GameState.MAIN_MENU) and music_enabled:
+            self.sound_manager.play_music("BACKGROUND_MUSIC")
+    
     def handle_events(self):
         """Process all game events using the event handler"""
         self.event_handler.handle_events()
@@ -105,6 +124,9 @@ class Game:
             # Use default settings
             self.player = Player(self.width // 2, self.height - 100)
         
+        # Set game reference in player for sound effects
+        self.player.set_game(self)
+        
         # Create map with default or custom settings
         if custom_settings:
             # Create map with custom settings
@@ -121,6 +143,9 @@ class Game:
             )
         else:
             self.current_map = Map()
+        
+        # Set game reference in map for sound effects
+        self.current_map.set_game(self)
             
         # Generate initial platforms
         self.current_map.generate_map()
@@ -134,6 +159,9 @@ class Game:
         # Store custom settings in state data if provided
         if custom_settings:
             self.state_manager.set_state_data("custom_settings", custom_settings)
+            
+        # Play game start sound
+        self.sound_manager.play_game_sound("game_start")
     
     def update(self):
         """Update game state"""
@@ -165,6 +193,8 @@ class Game:
                 # Check if player has fallen off the bottom of the screen
                 player_screen_y_for_fall_check = self.player.y - self.camera_y
                 if player_screen_y_for_fall_check > self.height + self.player.radius: # Added radius for buffer
+                    # Player died, play death sound
+                    self.player.die(reason="Fall")
                     self.state_manager.change_state(GameState.GAME_OVER, 
                                                  score=abs(int(self.camera_y)), 
                                                  reason="Fall")
@@ -173,6 +203,8 @@ class Game:
                 self.collision_handler.check_platform_collisions() # Use collision handler
                 
                 if self.camera_y <= self.current_map.target_height:
+                    # Level complete, play completion sound
+                    self.sound_manager.play_game_sound("level_complete")
                     self.state_manager.change_state(GameState.GAME_OVER, 
                                                  score=abs(int(self.camera_y)), 
                                                  reason="Victory")
@@ -196,12 +228,28 @@ class Game:
         sfx_volume = get_setting('AUDIO', 'sfx_volume', 1.0)
         music_volume = get_setting('AUDIO', 'music_volume', 0.7)
         
-        # Apply music volume
-        pygame.mixer.music.set_volume(music_volume * master_volume)
+        # Apply settings to sound manager
+        self.sound_manager.update_volume(
+            master=master_volume,
+            sfx=sfx_volume,
+            music=music_volume
+        )
         
-        # Apply sfx volume to all sounds
-        for sound in self.sounds.values():
-            sound.set_volume(sfx_volume * master_volume)
+        # Apply music and sfx enabled settings
+        music_enabled = get_setting('AUDIO', 'music_enabled', True)
+        sfx_enabled = get_setting('AUDIO', 'sfx_enabled', True)
+        
+        # Update sound manager state
+        self.sound_manager.music_enabled = music_enabled
+        self.sound_manager.sfx_enabled = sfx_enabled
+        
+        # If music is disabled but was playing, stop it
+        if not music_enabled and self.sound_manager.current_music:
+            self.sound_manager.stop_music()
+        # If music is enabled but not playing, start it in appropriate states
+        elif music_enabled and not self.sound_manager.current_music:
+            if self.state_manager.is_state(GameState.MAIN_MENU):
+                self.sound_manager.play_music("BACKGROUND_MUSIC")
     
     def run(self):
         """Main game loop"""

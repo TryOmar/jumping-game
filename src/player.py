@@ -21,6 +21,13 @@ class Player:
         self.auto_jump_cooldown = 0
         self.auto_jump_enabled = True  # Flag to enable/disable auto-jumping
         
+        # Game reference (set after creation)
+        self.game = None
+        
+    def set_game(self, game):
+        """Set a reference to the game instance for sounds and other interactions"""
+        self.game = game
+        
     def update(self):
         """Update player position and physics (all in world coordinates)"""
         # Apply gravity
@@ -59,6 +66,11 @@ class Player:
             self.is_jumping = True
             self.on_ground = False
             self.auto_jump_cooldown = 10  # Short cooldown to prevent double jumps
+            
+            # Play jump sound if game reference exists
+            if self.game and hasattr(self.game, 'sound_manager'):
+                self.game.sound_manager.play_game_sound("jump")
+                
             return True
         return False
         
@@ -121,3 +133,13 @@ class Player:
         """Toggle auto-jump on/off"""
         self.auto_jump_enabled = not self.auto_jump_enabled
         return self.auto_jump_enabled 
+
+    def die(self, reason="Fall"):
+        """Handle player death with visual or sound effects"""
+        # Play death sound if game reference exists
+        if self.game and hasattr(self.game, 'sound_manager'):
+            self.game.sound_manager.play_game_sound("die")
+            
+        # Any additional death effects can be added here
+        # Change color, play animation, etc.
+        self.color = (255, 0, 0)  # Change to red when dead 

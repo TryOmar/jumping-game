@@ -12,6 +12,7 @@ class Map:
         self.platform_speed = platform_speed
         self.target_height = -5000  # Negative because we'll be going up
         self.debug_mode = False
+        self.game = None  # Reference to game object for sound effects
         
         # Custom platform generation settings
         self.platform_density = platform_density  # Higher = more platforms (closer together)
@@ -22,6 +23,15 @@ class Map:
         # Calculate regular platform percentage based on others
         total_special = self.moving_platform_pct + self.disappearing_platform_pct + self.dangerous_platform_pct
         self.regular_platform_pct = max(0, 1.0 - total_special)
+        
+    def set_game(self, game):
+        """Set reference to game object for sound effects"""
+        self.game = game
+        
+        # Set game reference on all existing platforms
+        for platform in self.platforms:
+            if isinstance(platform, MovingPlatform):
+                platform.set_game(game)
         
     def generate_map(self):
         """Generate the initial platforms for the map"""
@@ -94,7 +104,10 @@ class Map:
         if platform_type == "regular":
             return Platform(x, y, width=width, height=PLATFORM_HEIGHT)
         elif platform_type == "moving":
-            return MovingPlatform(x, y, width=width, height=PLATFORM_HEIGHT, speed=self.platform_speed)
+            platform = MovingPlatform(x, y, width=width, height=PLATFORM_HEIGHT, speed=self.platform_speed)
+            if self.game:
+                platform.set_game(self.game)
+            return platform
         elif platform_type == "disappearing":
             return DisappearingPlatform(x, y, width=width, height=PLATFORM_HEIGHT)
         elif platform_type == "dangerous":

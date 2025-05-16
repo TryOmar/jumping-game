@@ -69,9 +69,16 @@ class CollisionHandler:
         # This ensures consistent bouncing regardless of auto-jump settings
         if self.game.player.vel_y > 0 or platform.bounce_ready:
             self.game.player.bounce()
+            # Play jump sound when player bounces
+            self.game.sound_manager.play_game_sound("jump")
+        else:
+            # Play landing sound when player stops on a platform
+            self.game.sound_manager.play_game_sound("land")
         
         # Handle platform type specific effects
         if isinstance(platform, DangerousPlatform):
+            # Play die sound
+            self.game.sound_manager.play_game_sound("die")
             # Game over on dangerous platform
             self.game.state_manager.change_state(GameState.GAME_OVER, 
                                         score=abs(int(self.game.camera_y)), 

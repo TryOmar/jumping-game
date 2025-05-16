@@ -52,20 +52,33 @@ class MovingPlatform(Platform):
         self.speed = speed or random.uniform(1, 3)
         self.direction = random.choice([-1, 1])
         self.start_x = x # Not currently used, but might be useful for defined paths
+        self.game = None  # Reference to game object for sound effects
+        
+    def set_game(self, game):
+        """Set reference to game object for sound effects"""
+        self.game = game
         
     def update(self, camera_y):
         """Update platform position"""
+        previous_direction = self.direction
         self.x += self.speed * self.direction
         
         # Using SCREEN_WIDTH directly from constants for boundary check
         if self.x <= 0:
             self.x = 0
             self.direction = 1
+            self._play_movement_sound()
         elif self.x + self.width >= SCREEN_WIDTH:
             self.x = SCREEN_WIDTH - self.width
             self.direction = -1
+            self._play_movement_sound()
             
         super().update(camera_y)
+        
+    def _play_movement_sound(self):
+        """Play sound when platform changes direction"""
+        if self.game and hasattr(self.game, 'sound_manager'):
+            self.game.sound_manager.play_game_sound("platform_move")
         
     # draw() method removed
         

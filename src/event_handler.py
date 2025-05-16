@@ -70,9 +70,12 @@ class EventHandler:
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_UP:
                 self.game.selected_option = (self.game.selected_option - 1) % len(self.game.menu_options)
+                self.game.sound_manager.play_ui_sound("hover")
             elif event.key == pygame.K_DOWN:
                 self.game.selected_option = (self.game.selected_option + 1) % len(self.game.menu_options)
+                self.game.sound_manager.play_ui_sound("hover")
             elif event.key == pygame.K_RETURN:
+                self.game.sound_manager.play_ui_sound("click")
                 self._handle_menu_selection()
             elif event.key == pygame.K_ESCAPE: # Main menu specific ESC
                 self.game.running = False
@@ -81,6 +84,7 @@ class EventHandler:
                 for i, rect in enumerate(self.game.menu_option_rects):
                     if rect.collidepoint(event.pos):
                         self.game.selected_option = i
+                        self.game.sound_manager.play_ui_sound("click")
                         self._handle_menu_selection()
                         break
 
@@ -311,20 +315,27 @@ class EventHandler:
                             break
                             
     def _handle_game_over_selection(self):
-        if hasattr(self.game, 'game_over_buttons') and self.game.game_over_buttons and \
-           hasattr(self.game, 'game_over_selected_option') and \
-           0 <= self.game.game_over_selected_option < len(self.game.game_over_buttons):
-            selected_action = self.game.game_over_buttons[self.game.game_over_selected_option]["action"]
-            if selected_action == "retry":
-                last_settings = self.game.state_manager.get_state_data().get("last_map_settings")
+        """Handle selection in game over menu"""
+        self.game.sound_manager.play_ui_sound("click")
+        selected = self.game.game_over_selected_option
+        buttons = self.game.game_over_buttons
+        
+        if selected < len(buttons):
+            action = buttons[selected]["action"]
+            
+            if action == "try_again":
+                # Get last game settings if available
+                last_settings = self.game.state_manager.get_state_data("last_map_settings")
                 if last_settings:
-                    last_map_id = self.game.state_manager.get_state_data().get("last_map_id", "default")
                     self.game.init_game(custom_settings=last_settings)
-                    self.game.state_manager.change_state(GameState.PLAYING)
-                else: 
-                    self.game.state_manager.change_state(GameState.MAP_SELECT)
-            elif selected_action == "main_menu":
+                else:
+                    self.game.init_game()  # Start with default settings
+                self.game.state_manager.change_state(GameState.PLAYING)
+                self.game.sound_manager.play_game_sound("restart")
+            elif action == "main_menu":
                 self.game.state_manager.change_state(GameState.MAIN_MENU)
+            elif action == "exit":
+                self.game.running = False
 
     def _handle_how_to_play_event(self, event): # Changed from _handle_how_to_play_events
         if event.type == pygame.KEYDOWN:
@@ -388,11 +399,16 @@ class EventHandler:
              self.game.apply_audio_settings()
     
     def _handle_menu_selection(self):
-        if self.game.selected_option == 0:
+        """Handle selection from main menu"""
+        self.game.sound_manager.play_ui_sound("click")
+        selected_option = self.game.menu_options[self.game.selected_option]
+        
+        if selected_option == "Play":
             self.game.state_manager.change_state(GameState.MAP_SELECT)
-        elif self.game.selected_option == 1:
+        elif selected_option == "How to Play":
             self.game.state_manager.change_state(GameState.HOW_TO_PLAY)
-        elif self.game.selected_option == 2:
+        elif selected_option == "Settings":
+            # No need to call init_settings() as it doesn't exist
             self.game.state_manager.change_state(GameState.SETTINGS)
-        elif self.game.selected_option == 3:
+        elif selected_option == "Exit":
             self.game.running = False
