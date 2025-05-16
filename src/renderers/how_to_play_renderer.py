@@ -6,7 +6,7 @@ class HowToPlayRenderer:
         self.screen = screen
         self.width = screen.get_width()
         self.height = screen.get_height()
-        
+    
         # Position settings - consistent with settings screen
         self.left_margin = 80
         self.right_margin = self.width - 350  # Increased margin to prevent text cutoff
@@ -100,7 +100,7 @@ class HowToPlayRenderer:
         ]
         
         # Player icon for visual reference
-        player_icon = pygame.draw.circle(
+        pygame.draw.circle(
             self.screen, 
             COLORS["TEXT_BLACK"],
             (self.left_margin + 10, content_y + 3),  # Adjusted position

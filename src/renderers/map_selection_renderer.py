@@ -8,6 +8,70 @@ class MapSelectionRenderer:
         self.width = screen.get_width()
         self.height = screen.get_height()
     
+        # Define map configurations for reuse and maintainability
+        self.map_configs = {
+            "map1": {
+                "name": "Map 1 - Beginner",
+                "color": GREEN,
+                "difficulty": "Easy",
+                "description": "Basic level, mostly regular platforms. Good for beginners!",
+                "config": {
+                    "gravity": 0.7,
+                    "player_speed": 3,
+                    "jump_strength": 8,
+                    "platform_density": 1.5,
+                    "moving_platform_pct": 10,
+                    "disappearing_platform_pct": 5,
+                    "dangerous_platform_pct": 5
+                }
+            },
+            "map2": {
+                "name": "Map 2 - Explorer",
+                "color": BLUE,
+                "difficulty": "Medium",
+                "description": "Faster platforms and more movement. Test your timing!",
+                "config": {
+                    "gravity": 0.6,
+                    "player_speed": 4,
+                    "jump_strength": 9,
+                    "platform_density": 1.8,
+                    "moving_platform_pct": 15,
+                    "disappearing_platform_pct": 10,
+                    "dangerous_platform_pct": 7
+                }
+            },
+            "map3": {
+                "name": "Map 3 - Challenger",
+                "color": YELLOW,
+                "difficulty": "Medium",
+                "description": "More special platforms. Skill and precision required!",
+                "config": {
+                    "gravity": 0.5,
+                    "player_speed": 5,
+                    "jump_strength": 11,
+                    "platform_density": 2.2,
+                    "moving_platform_pct": 20,
+                    "disappearing_platform_pct": 15,
+                    "dangerous_platform_pct": 12
+                }
+            },
+            "map4": {
+                "name": "Map 4 - Master",
+                "color": RED,
+                "difficulty": "Hard",
+                "description": "Ultimate challenge with all platform types. Experts only!",
+                "config": {
+                    "gravity": 0.4,
+                    "player_speed": 6,
+                    "jump_strength": 12,
+                    "platform_density": 2.5,
+                    "moving_platform_pct": 25,
+                    "disappearing_platform_pct": 20,
+                    "dangerous_platform_pct": 15
+                }
+            }
+        }
+    
     def render_map_type_selection(self, game):
         """Render the map selection screen with Official and Custom map options"""
         # Background
@@ -133,96 +197,235 @@ class MapSelectionRenderer:
         }
     
     def render_official_maps(self, game):
-        """Render the official maps selection screen"""
+        """Render the official maps selection screen with 4 available maps"""
         # Background
-        background_color = (60, 110, 160)  # Slightly different blue
-        self.screen.fill(background_color)
+        self.screen.fill(COLORS["BG_OFFICIAL_MAPS"])
         
-        # Draw header
-        header_font = pygame.font.SysFont(None, 56)
-        header_text = header_font.render("OFFICIAL MAPS", True, WHITE)
-        self.screen.blit(header_text, (self.width//2 - header_text.get_width()//2, 80))
+        # Draw header with decorative underline for consistency
+        create_centered_text(
+            self.screen,
+            "OFFICIAL MAPS",
+            FONT_SIZES["HEADER"] - 4,  # Slightly smaller header
+            COLORS["TEXT_WHITE"],
+            75
+        )
         
-        # Small map previews
-        map_preview_size = 120
-        preview_y = 180
-        map_spacing = 40
+        # Draw decorative line under header
+        pygame.draw.rect(
+            self.screen,
+            COLORS["TEXT_WHITE"],
+            (self.width//2 - 180, 125, 360, 3)
+        )
         
-        # Available maps
+        # Initialize selected map if not already set
+        if not hasattr(game, 'selected_official_map'):
+            game.selected_official_map = "map1"
+        
+        # Map preview size and positioning - adjusted for better spacing
+        map_preview_size = 85
+        preview_y = 165
+        margin = 45
+        total_width = (map_preview_size * 4) + (margin * 3)
+        start_x = (self.width - total_width) // 2
+        
+        # Available maps with calculated x positions
         maps = [
-            {"name": "Map 1", "x": self.width//2 - 230, "color": GREEN, "status": "Available", "key": "map1"},
-            {"name": "Map 2", "x": self.width//2 - 80, "color": BLUE, "status": "Coming Soon"},
-            {"name": "Map 3", "x": self.width//2 + 70, "color": YELLOW, "status": "Coming Soon"},
-            {"name": "Map 4", "x": self.width//2 + 220, "color": RED, "status": "Coming Soon"}
+            {"key": "map1", "x": start_x},
+            {"key": "map2", "x": start_x + map_preview_size + margin},
+            {"key": "map3", "x": start_x + (map_preview_size + margin) * 2},
+            {"key": "map4", "x": start_x + (map_preview_size + margin) * 3}
         ]
         
         # Store button rectangles
         map_buttons = {}
         
-        desc_font = pygame.font.SysFont(None, 24)
+        # Common fonts - smaller for better fit
+        title_font = pygame.font.SysFont(None, FONT_SIZES["SMALL_TEXT"] - 2)
+        diff_font = pygame.font.SysFont(None, FONT_SIZES["SMALL_TEXT"] - 6)
         
+        # Draw map previews with selection indicator
         for map_info in maps:
+            map_key = map_info["key"]
+            map_data = self.map_configs[map_key]
             map_rect = pygame.Rect(map_info["x"], preview_y, map_preview_size, map_preview_size)
             
+            # Draw map preview shadow for depth
+            shadow_rect = pygame.Rect(map_info["x"] + 2, preview_y + 2, map_preview_size, map_preview_size)
+            pygame.draw.rect(self.screen, (25, 50, 75), shadow_rect, 0, 4)
+            
             # Draw map preview
-            pygame.draw.rect(self.screen, map_info["color"], map_rect)
+            pygame.draw.rect(self.screen, map_data["color"], map_rect, 0, 4)
             
-            # Add gray overlay for unavailable maps
-            if map_info["status"] == "Coming Soon":
-                overlay = pygame.Surface((map_preview_size, map_preview_size), pygame.SRCALPHA)
-                overlay.fill((100, 100, 100, 150))  # Semi-transparent gray
-                self.screen.blit(overlay, map_rect)
+            # Draw selection indicator if this map is selected
+            if game.selected_official_map == map_key:
+                pygame.draw.rect(self.screen, WHITE, map_rect, 3, 4)
+                triangle_size = 8
+                pygame.draw.polygon(self.screen, WHITE, [
+                    (map_rect.left + 2, map_rect.top + 2),
+                    (map_rect.left + triangle_size + 2, map_rect.top + 2),
+                    (map_rect.left + 2, map_rect.top + triangle_size + 2)
+                ])
+                pygame.draw.polygon(self.screen, WHITE, [
+                    (map_rect.right - 2, map_rect.bottom - 2),
+                    (map_rect.right - triangle_size - 2, map_rect.bottom - 2),
+                    (map_rect.right - 2, map_rect.bottom - triangle_size - 2)
+                ])
+            else:
+                pygame.draw.rect(self.screen, WHITE, map_rect, 1, 4)
             
-            pygame.draw.rect(self.screen, WHITE, map_rect, 2)
+            # Improved map name display with proper sizing
+            simple_name = f"Map {map_key[-1]}"
+            name_text = title_font.render(simple_name, True, WHITE)
+            name_width = name_text.get_width()
             
-            # Map name
-            map_text = desc_font.render(map_info["name"], True, WHITE)
-            self.screen.blit(map_text, (map_rect.centerx - map_text.get_width()//2, 
-                                     map_rect.centery - map_text.get_height()//2))
+            # Create a darker background for text that fits the width of the text
+            name_bg_rect = pygame.Rect(map_rect.centerx - name_width//2 - 4, map_rect.top + 4, name_width + 8, name_text.get_height() + 4)
+            pygame.draw.rect(self.screen, (0, 0, 0, 180), name_bg_rect, 0, 3)
             
-            # Map status
-            status_text = desc_font.render(map_info["status"], True, 
-                                        (255, 255, 255) if map_info["status"] == "Available" else (255, 200, 0))
-            self.screen.blit(status_text, (map_rect.centerx - status_text.get_width()//2, 
-                                        map_rect.bottom + 10))
+            # Draw name centered on the map
+            self.screen.blit(name_text, (map_rect.centerx - name_width//2, map_rect.top + 6))
             
-            # Store rect for available maps
-            if map_info["status"] == "Available" and "key" in map_info:
-                map_buttons[map_info["key"]] = map_rect
+            # Difficulty label with improved visuals
+            difficulty_colors = {
+                "Easy": (120, 255, 120),
+                "Medium": (255, 255, 120),
+                "Hard": (255, 120, 120)
+            }
+            
+            # Simplified difficulty display
+            diff_text_str = map_data['difficulty']
+            diff_render = diff_font.render(diff_text_str, True, difficulty_colors.get(diff_text_str, WHITE))
+            diff_width = diff_render.get_width()
+            
+            # Background for difficulty that fits properly
+            diff_bg_rect = pygame.Rect(map_rect.centerx - diff_width//2 - 4, map_rect.bottom - diff_render.get_height() - 8, diff_width + 8, diff_render.get_height() + 4)
+            pygame.draw.rect(self.screen, (0, 0, 0, 180), diff_bg_rect, 0, 3)
+            
+            # Draw difficulty text
+            self.screen.blit(diff_render, (map_rect.centerx - diff_width//2, map_rect.bottom - diff_render.get_height() - 6))
+            
+            # Store rect for click detection - Make sure all maps are clickable
+            map_buttons[map_key] = map_rect
         
-        # Map descriptions
-        description_y = preview_y + map_preview_size + 60
+        # Draw selected map details section - improved layout
+        selected_data = self.map_configs[game.selected_official_map]
+        details_y = preview_y + map_preview_size + 35
         
-        # Descriptions for each map
-        descriptions = [
-            "Basic level with standard platforms. Perfect for beginners!",
-            "Faster platforms and moving obstacles. Test your reflexes!",
-            "Challenging level with disappearing platforms. Timing is key!",
-            "Ultimate challenge with all platform types and obstacles!"
+        # Create background panel for details
+        details_panel = pygame.Rect(self.width//2 - 280, details_y, 560, 125)
+        pygame.draw.rect(self.screen, (35, 65, 95, 220), details_panel, 0, 8)
+        pygame.draw.rect(self.screen, WHITE, details_panel, 1, 8)
+        
+        # Map title
+        map_title = f"{selected_data['name']} ({selected_data['difficulty']})"
+        create_centered_text(
+            self.screen,
+            map_title,
+            FONT_SIZES["STANDARD_TEXT"] - 6,
+            WHITE,
+            details_y + 15
+        )
+        
+        # Map description
+        create_centered_text(
+            self.screen,
+            selected_data['description'],
+            FONT_SIZES["SMALL_TEXT"] - 4,
+            COLORS["DESCRIPTION_TEXT"],
+            details_y + 40
+        )
+        
+        # Map stats in 2 columns with better spacing
+        stats_y_base = details_y + 65
+        stats_col1_x = self.width//2 - 220
+        stats_col2_x = self.width//2 + 10
+        
+        # Draw faint separator line between columns
+        pygame.draw.line(self.screen, (120, 120, 150, 100), 
+                      (self.width//2 - 5, stats_y_base - 2), 
+                      (self.width//2 - 5, stats_y_base + 48), 1)
+        
+        # Draw stats with labels
+        stat_font = pygame.font.SysFont(None, FONT_SIZES["SMALL_TEXT"] - 4)
+        value_font = pygame.font.SysFont(None, FONT_SIZES["SMALL_TEXT"] - 4)
+        stats_line_height = 18
+        
+        stats_left = [
+            {"label": "Gravity", "value": selected_data["config"]["gravity"], "format": "{:.1f}"},
+            {"label": "Player Speed", "value": selected_data["config"]["player_speed"], "format": "{:.0f}"},
+            {"label": "Jump Strength", "value": selected_data["config"]["jump_strength"], "format": "{:.0f}"}
         ]
         
-        # Display description for selected map (or first map by default)
-        selected_map = 0  # Default to the first map
+        stats_right = [
+            {"label": "Density", "value": selected_data["config"]["platform_density"], "format": "{:.1f}"},
+            {"label": "Moving %", "value": selected_data["config"]["moving_platform_pct"], "format": "{:.0f}%"},
+            {"label": "Dangerous %", "value": selected_data["config"]["dangerous_platform_pct"], "format": "{:.0f}%"}
+        ]
         
-        desc_text = descriptions[selected_map]
-        desc_rendered = desc_font.render(desc_text, True, WHITE)
-        self.screen.blit(desc_rendered, (self.width//2 - desc_rendered.get_width()//2, description_y))
+        # Draw left column stats
+        for i, stat in enumerate(stats_left):
+            stat_y = stats_y_base + i * stats_line_height
+            
+            # Label
+            label_text = stat_font.render(stat["label"] + ":", True, (180, 180, 255))
+            self.screen.blit(label_text, (stats_col1_x, stat_y))
+            
+            # Value - aligned fixed position from label
+            value_str = stat["format"].format(stat["value"])
+            value_text = value_font.render(value_str, True, (240, 240, 140))
+            self.screen.blit(value_text, (stats_col1_x + 100, stat_y))
         
-        # Additional info for selected map
-        info_y = description_y + 40
+        # Draw right column stats
+        for i, stat in enumerate(stats_right):
+            stat_y = stats_y_base + i * stats_line_height
+            
+            # Label
+            label_text = stat_font.render(stat["label"] + ":", True, (180, 180, 255))
+            self.screen.blit(label_text, (stats_col2_x, stat_y))
+            
+            # Value - aligned fixed position from label
+            value_str = stat["format"].format(stat["value"])
+            value_text = value_font.render(value_str, True, (240, 240, 140))
+            self.screen.blit(value_text, (stats_col2_x + 100, stat_y))
         
-        # Add level info
-        difficulty_labels = ["Easy", "Medium", "Hard", "Expert"]
-        difficulty_text = desc_font.render(f"Difficulty: {difficulty_labels[selected_map]}", True, WHITE)
-        self.screen.blit(difficulty_text, (self.width//2 - difficulty_text.get_width()//2, info_y))
+        # Play selected map button with shadow for depth - moved higher
+        play_button_y = details_y + 125 + 5
+        play_button_width = 200
+        play_button_height = 40
+        play_button_x = self.width//2 - play_button_width//2
         
-        # Instructions
-        instruction_font = pygame.font.SysFont(None, 24)
-        instruction_text = instruction_font.render("Click on a map to select, or press ESC to return", True, WHITE)
-        self.screen.blit(instruction_text, (self.width//2 - instruction_text.get_width()//2, self.height - 40))
+        # Draw shadow
+        shadow_rect = pygame.Rect(play_button_x + 2, play_button_y + 2, play_button_width, play_button_height)
+        pygame.draw.rect(self.screen, (25, 50, 75), shadow_rect, 0, 4)
         
-        # Store button rectangles in the game object for click detection
+        # Draw play button
+        play_button_rect = pygame.Rect(play_button_x, play_button_y, play_button_width, play_button_height)
+        create_button(
+            self.screen, 
+            f"PLAY MAP {selected_data['name'].split(' ')[1]}",
+            play_button_rect,
+            bg_color=(50, 110, 50),
+            border_color=WHITE,
+            text_color=WHITE,
+            font_size=FONT_SIZES["STANDARD_TEXT"] - 10
+        )
+        
+        # Add play button to buttons dict
+        map_buttons["play"] = play_button_rect
+        
+        # Instructions with improved styling
+        instruction_text = "Click a map to select. Press PLAY or ESC to return."
+        create_centered_text(
+            self.screen,
+            instruction_text,
+            FONT_SIZES["FOOTER_NOTE"] - 4,
+            WHITE,
+            self.height - 25
+        )
+        
+        # Store button rectangles and map configs in the game object
         game.official_map_buttons = map_buttons
+        game.official_map_configs = {key: self.map_configs[key]["config"] for key in self.map_configs}
         
     def render_custom_maps(self, game):
         """Render the custom maps configuration screen"""
@@ -343,7 +546,7 @@ class MapSelectionRenderer:
         
         # Play button
         play_button_y = settings_start_y + len(settings) * setting_height + 40
-        play_button_rect = pygame.Rect(self.width//2 - 150, play_button_y, 300, 50)  # Wider button (300px instead of 200px)
+        play_button_rect = pygame.Rect(self.width//2 - 150, play_button_y, 300, 50)
         create_button(
             self.screen, 
             "PLAY CUSTOM MAP", 
@@ -373,5 +576,5 @@ class MapSelectionRenderer:
         # Position between the reset button and the bottom of the screen
         reset_button_bottom = reset_button_rect.bottom
         space_below = self.height - reset_button_bottom
-        instruction_y = reset_button_bottom + (space_below // 3)  # Position 1/3 of the way between reset button and bottom
+        instruction_y = reset_button_bottom + (space_below // 3)
         self.screen.blit(instruction_text, (self.width//2 - instruction_text.get_width()//2, instruction_y)) 
