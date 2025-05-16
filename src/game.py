@@ -230,30 +230,24 @@ class Game:
     
     def apply_audio_settings(self):
         """Apply current audio settings"""
-        # Get volume settings
-        master_volume = self.audio_settings['master_volume']
-        sfx_volume = self.audio_settings['sfx_volume']
-        music_volume = self.audio_settings['music_volume']
+        # Get the latest settings from the config file
+        # This ensures we use the most up-to-date values
+        from src.config.settings import get_setting
         
-        # Save the updated values back to settings if they exist in audio_settings
-        if hasattr(self, 'audio_settings'):
-            if 'master_volume' in self.audio_settings:
-                update_setting('AUDIO', 'master_volume', self.audio_settings['master_volume'])
-                master_volume = self.audio_settings['master_volume']
-            
-            if 'sfx_volume' in self.audio_settings:
-                update_setting('AUDIO', 'sfx_volume', self.audio_settings['sfx_volume'])
-                sfx_volume = self.audio_settings['sfx_volume']
-            
-            if 'music_volume' in self.audio_settings:
-                update_setting('AUDIO', 'music_volume', self.audio_settings['music_volume'])
-                music_volume = self.audio_settings['music_volume']
-            
+        latest_master_volume = get_setting('AUDIO', 'master_volume', 1.0)
+        latest_sfx_volume = get_setting('AUDIO', 'sfx_volume', 1.0)
+        latest_music_volume = get_setting('AUDIO', 'music_volume', 0.7)
+        
+        # Update our in-memory audio settings with the latest values
+        self.audio_settings['master_volume'] = latest_master_volume
+        self.audio_settings['sfx_volume'] = latest_sfx_volume
+        self.audio_settings['music_volume'] = latest_music_volume
+        
         # Apply settings to sound manager
         self.sound_manager.update_volume(
-            master=master_volume,
-            sfx=sfx_volume,
-            music=music_volume
+            master=latest_master_volume,
+            sfx=latest_sfx_volume,
+            music=latest_music_volume
         )
         
         # Apply music and sfx enabled settings

@@ -418,6 +418,11 @@ class EventHandler:
         # Apply audio immediately if it's an audio setting
         if slider_key in ['master_volume', 'sfx_volume', 'music_volume'] and settings_dict is self.game.audio_settings:
             print(f"Slider moved: {slider_key} = {value}")
+            
+            # Save the setting to configuration file immediately
+            update_setting('AUDIO', slider_key, value)
+            
+            # Apply the new settings
             self.game.apply_audio_settings()
             
             # Play a test sound when moving the sfx slider

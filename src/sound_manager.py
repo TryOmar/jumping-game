@@ -5,6 +5,7 @@ This module provides a simple interface for playing sounds and managing audio se
 
 import pygame
 from src.config import sound_config
+from src.config.settings import get_setting
 
 class SoundManager:
     """Handles playing sounds, music, and managing audio settings."""
@@ -30,6 +31,9 @@ class SoundManager:
         """Play a sound effect if sound effects are enabled."""
         if not self.enabled or not self.sfx_enabled:
             return None
+        
+        # Refresh volume settings from config before playing
+        self._refresh_volume_settings()
             
         return sound_config.play_sound(sound_name)
     
@@ -37,6 +41,9 @@ class SoundManager:
         """Play background music if music is enabled."""
         if not self.enabled or not self.music_enabled:
             return
+        
+        # Refresh volume settings from config before playing
+        self._refresh_volume_settings()
             
         # Stop any currently playing music
         if pygame.mixer.music.get_busy():
@@ -147,4 +154,19 @@ class SoundManager:
     def cleanup(self):
         """Clean up resources when shutting down."""
         self.stop_music()
-        sound_config.cleanup() 
+        sound_config.cleanup()
+    
+    def _refresh_volume_settings(self):
+        """Get the latest volume settings from configuration."""
+        # Get current settings
+        master_volume = get_setting('AUDIO', 'master_volume', 1.0)
+        sfx_volume = get_setting('AUDIO', 'sfx_volume', 1.0)
+        music_volume = get_setting('AUDIO', 'music_volume', 0.7)
+        
+        # Apply them to sound config
+        sound_config.update_volume_settings(
+            master=master_volume,
+            ui=sfx_volume,
+            gameplay=sfx_volume,
+            music=music_volume
+        ) 
