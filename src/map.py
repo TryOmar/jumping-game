@@ -39,7 +39,7 @@ class Map:
         self.platforms = []
         
         # Create a starter platform at the bottom
-        start_platform = Platform(SCREEN_WIDTH // 2 - 50, SCREEN_HEIGHT - 50, width=PLATFORM_WIDTH, height=PLATFORM_HEIGHT)
+        start_platform = Platform(self.game.width // 2 - 50, self.game.height - 50, width=PLATFORM_WIDTH, height=PLATFORM_HEIGHT)
         self.platforms.append(start_platform)
         
         # Calculate vertical gap based on platform density
@@ -48,14 +48,19 @@ class Map:
         vertical_gap = int(base_gap / self.platform_density)
         vertical_gap = max(40, min(100, vertical_gap))  # Constrain between 40-100
         
-        # Generate initial platforms going upward with density-based spacing
+        # Calculate the initial Y position for the first jumpable platform
+        # Start from the player's initial Y and add a gap to place the first platform above
+        # The player's initial Y is self.game.height - 100
+        player_start_y = self.game.height - 100
+        current_y = player_start_y - vertical_gap
+        
         for i in range(PLATFORM_COUNT):
             # Calculate y position with density-adjusted spacing
-            y = SCREEN_HEIGHT - 100 - i * vertical_gap
+            y = current_y
             
             # Ensure good horizontal distribution
             # Divide screen into sections for better distribution
-            section_width = SCREEN_WIDTH // 3
+            section_width = self.game.width // 3
             section = i % 3  # 0, 1, or 2
             
             # Random x within the section to ensure platforms across the screen
@@ -66,6 +71,7 @@ class Map:
             # Create platform with the configured probabilities
             platform = self._create_platform_by_type(x, y)
             self.platforms.append(platform)
+            current_y -= vertical_gap # Move upwards for the next platform
         
     def update(self, camera_y):
         """Update all platforms, remove off-screen ones, generate new ones"""
@@ -75,7 +81,7 @@ class Map:
             
         # Remove platforms that are below the bottom of the screen with a margin
         # Only remove platforms that are definitely off-screen
-        self.platforms = [p for p in self.platforms if p.y < SCREEN_HEIGHT - camera_y + 200]
+        self.platforms = [p for p in self.platforms if p.y < self.game.height - camera_y + 200]
         
         # Find the highest platform
         if self.platforms:
@@ -83,7 +89,7 @@ class Map:
             # Always maintain platforms within the visible range and above
             # Ensure there are platforms being generated before they're needed
             screen_top = camera_y
-            if highest_y > screen_top - SCREEN_HEIGHT:
+            if highest_y > screen_top - self.game.height:
                 self.generate_more_platforms(camera_y)
     
     def _create_platform_by_type(self, x, y, width=PLATFORM_WIDTH):
@@ -116,7 +122,7 @@ class Map:
     def generate_more_platforms(self, camera_y):
         """Generate additional platforms as the player moves up"""
         # Find the highest platform
-        highest_y = min([p.y for p in self.platforms]) if self.platforms else SCREEN_HEIGHT
+        highest_y = min([p.y for p in self.platforms]) if self.platforms else self.game.height
         
         # Calculate vertical gap based on platform density
         base_gap = 70  # Default gap
@@ -130,21 +136,23 @@ class Map:
         if self.debug_mode:
             print(f"Generating new platforms. Camera Y: {camera_y}, Highest platform Y: {highest_y}")
         
+        # Start generating platforms upwards from just above the highest platform
+        current_y = highest_y - vertical_gap
+        
         for i in range(platform_count):
             # Position each new platform above the highest one with configured gap
-            # Make sure platforms are generated in world coordinates
-            y = highest_y - (i + 1) * vertical_gap
-            
-            # Ensure we're generating platforms in a good pattern for gameplay
+            # Make sure platforms are generated in a good pattern for gameplay
             # Alternate between left, center, and right sections of the screen
             section = i % 3  # 0, 1, or 2
             
+            y = current_y
+            
             if section == 0:  # Left section
-                x = random.randint(50, SCREEN_WIDTH // 3 - 50)
+                x = random.randint(50, self.game.width // 3 - 50)
             elif section == 1:  # Center section
-                x = random.randint(SCREEN_WIDTH // 3 + 50, 2 * SCREEN_WIDTH // 3 - 50)
+                x = random.randint(self.game.width // 3 + 50, 2 * self.game.width // 3 - 50)
             else:  # Right section
-                x = random.randint(2 * SCREEN_WIDTH // 3 + 50, SCREEN_WIDTH - 150)
+                x = random.randint(2 * self.game.width // 3 + 50, self.game.width - 150)
             
             # Create platform with consistent width
             platform_width = random.randint(80, 120)  # Vary width slightly

@@ -405,6 +405,15 @@ class EventHandler:
                 self.game.renderer.screen = self.game.screen # Update renderer's screen reference
                 self.game.renderer.init_renderers() # Re-initialize all sub-renderers
 
+            # If the game is in a menu state, regenerate the map with the new resolution
+            # This ensures the main menu background (which might draw a map preview)
+            # and subsequent gameplay use the correct dimensions for platform generation.
+            if self.game.state_manager.is_state(GameState.MAIN_MENU) or \
+               self.game.state_manager.is_state(GameState.SETTINGS):
+                if self.game.current_map:
+                    print("Regenerating map due to resolution change.")
+                    self.game.current_map.generate_map()
+
     def _update_slider_value(self, slider_key, mouse_x, sliders_dict, settings_dict):
         slider_info = sliders_dict.get(slider_key)
         if not slider_info: return
