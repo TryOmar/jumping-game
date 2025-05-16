@@ -2,7 +2,7 @@ import pygame
 from src.constants import BLACK, GRAVITY, JUMP_STRENGTH, MOVE_SPEED
 
 class Player:
-    def __init__(self, x, y, radius=15):
+    def __init__(self, x, y, radius=15, speed=None, jump_strength=None):
         self.x = x
         self.y = y  # World Y coordinate
         self.radius = radius
@@ -13,9 +13,9 @@ class Player:
         self.vel_y = 0
         self.is_jumping = False
         self.on_ground = False
-        self.jump_strength = JUMP_STRENGTH
+        self.jump_strength = jump_strength if jump_strength is not None else JUMP_STRENGTH
         self.gravity = GRAVITY
-        self.move_speed = MOVE_SPEED
+        self.move_speed = speed if speed is not None else MOVE_SPEED
         
         # For automatic jumping
         self.auto_jump_cooldown = 0
@@ -55,7 +55,7 @@ class Player:
             if force:
                 self.vel_y = force
             else:
-                self.vel_y = self.jump_strength
+                self.vel_y = -self.jump_strength  # Negative because up is negative in pygame
             self.is_jumping = True
             self.on_ground = False
             self.auto_jump_cooldown = 10  # Short cooldown to prevent double jumps
@@ -66,7 +66,7 @@ class Player:
         """Bounce the player (automatic jump when hitting platforms)"""
         # Always allow bounce from platforms (platform bounce_ready property will control this)
         # Bounce should work regardless of auto-jump settings
-        bounce_strength = strength if strength is not None else self.jump_strength * 2
+        bounce_strength = strength if strength is not None else -self.jump_strength * 1.5
         
         # Directly set velocity without going through jump logic
         # This ensures bouncing always works regardless of auto-jump setting

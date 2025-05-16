@@ -4,6 +4,7 @@ from src.game_state import GameState
 class EventHandler:
     def __init__(self, game):
         self.game = game
+        self.dragging_slider = None  # Track which slider is being dragged
     
     def handle_events(self):
         """Process all game events"""
@@ -130,6 +131,49 @@ class EventHandler:
                                     self.game.init_game()
                                 # Additional maps would be handled here
             
+            # Handle mouse events for custom maps screen
+            elif self.game.state_manager.is_state(GameState.CUSTOM_MAPS):
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # Left click
+                    mouse_pos = pygame.mouse.get_pos()
+                    
+                    # Check if clicking on a slider
+                    if hasattr(self.game, 'custom_map_sliders'):
+                        for key, slider_info in self.game.custom_map_sliders.items():
+                            if slider_info["rect"].collidepoint(mouse_pos):
+                                self.dragging_slider = key
+                                # Immediately adjust the value based on click position
+                                self._update_slider_value(key, mouse_pos[0])
+                                break
+                    
+                    # Check if clicking on a button
+                    if hasattr(self.game, 'custom_map_buttons'):
+                        if "play" in self.game.custom_map_buttons and self.game.custom_map_buttons["play"].collidepoint(mouse_pos):
+                            print("Starting custom map with settings:", self.game.custom_map_settings)
+                            # Pass custom settings to game state
+                            self.game.state_manager.change_state(GameState.PLAYING, custom_settings=self.game.custom_map_settings)
+                            self.game.init_game(custom_settings=self.game.custom_map_settings)
+                        
+                        elif "reset" in self.game.custom_map_buttons and self.game.custom_map_buttons["reset"].collidepoint(mouse_pos):
+                            # Reset settings to default
+                            self.game.custom_map_settings = {
+                                "gravity": 0.5,
+                                "player_speed": 5,
+                                "jump_strength": 10,
+                                "platform_density": 2.0,
+                                "moving_platform_pct": 25,
+                                "disappearing_platform_pct": 15,
+                                "dangerous_platform_pct": 10,
+                                "active_setting": None
+                            }
+                
+                # Handle dragging sliders
+                if event.type == pygame.MOUSEMOTION and self.dragging_slider:
+                    self._update_slider_value(self.dragging_slider, event.pos[0])
+                
+                # Handle releasing slider
+                if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+                    self.dragging_slider = None
+            
             # Handle mouse events for game over screen
             elif self.game.state_manager.is_state(GameState.GAME_OVER):
                 if event.type == pygame.MOUSEMOTION:
@@ -150,6 +194,36 @@ class EventHandler:
                                 self.game.game_over_selected_option = i
                                 self._handle_game_over_selection()
                                 break
+    
+    def _update_slider_value(self, slider_key, mouse_x):
+        """Update slider value based on mouse position"""
+        if not hasattr(self.game, 'custom_map_sliders'):
+            return
+            
+        slider_info = self.game.custom_map_sliders[slider_key]
+        slider_rect = slider_info["rect"]
+        
+        # Calculate normalized position (0-1)
+        slider_width = slider_rect.width
+        slider_start = slider_rect.left
+        slider_rel_pos = max(0, min(mouse_x - slider_start, slider_width))
+        normalized_pos = slider_rel_pos / slider_width
+        
+        # Calculate actual value based on range
+        min_val = slider_info["min"]
+        max_val = slider_info["max"]
+        step = slider_info["step"]
+        
+        # Calculate value and round to nearest step
+        raw_value = min_val + normalized_pos * (max_val - min_val)
+        steps = round((raw_value - min_val) / step)
+        value = min_val + steps * step
+        
+        # Ensure value is within bounds
+        value = max(min_val, min(max_val, value))
+        
+        # Update the setting
+        self.game.custom_map_settings[slider_key] = value
     
     def _handle_menu_selection(self):
         """Handle menu option selection"""

@@ -4,13 +4,24 @@ from src.platform import Platform, MovingPlatform, DisappearingPlatform, Dangero
 from src.constants import SCREEN_WIDTH, SCREEN_HEIGHT, PLATFORM_COUNT, WHITE, BLACK, RED, GREEN, BLUE, PLATFORM_COLORS, PLATFORM_WIDTH, PLATFORM_HEIGHT
 
 class Map:
-    def __init__(self, theme_color=(0, 150, 0), gravity=0.5, platform_speed=2):
+    def __init__(self, theme_color=(0, 150, 0), gravity=0.5, platform_speed=2, platform_density=2.0, 
+                 moving_platform_pct=25, disappearing_platform_pct=15, dangerous_platform_pct=10):
         self.platforms = []
         self.theme_color = theme_color
         self.gravity = gravity
         self.platform_speed = platform_speed
         self.target_height = -5000  # Negative because we'll be going up
         self.debug_mode = False
+        
+        # Custom platform generation settings
+        self.platform_density = platform_density  # Higher = more platforms (closer together)
+        self.moving_platform_pct = moving_platform_pct / 100.0  # Convert to decimal
+        self.disappearing_platform_pct = disappearing_platform_pct / 100.0
+        self.dangerous_platform_pct = dangerous_platform_pct / 100.0
+        
+        # Calculate regular platform percentage based on others
+        total_special = self.moving_platform_pct + self.disappearing_platform_pct + self.dangerous_platform_pct
+        self.regular_platform_pct = max(0, 1.0 - total_special)
         
     def generate_map(self):
         """Generate the initial platforms for the map"""
@@ -21,10 +32,15 @@ class Map:
         start_platform = Platform(SCREEN_WIDTH // 2 - 50, SCREEN_HEIGHT - 50, width=PLATFORM_WIDTH, height=PLATFORM_HEIGHT)
         self.platforms.append(start_platform)
         
-        # Generate initial platforms going upward with smaller, more consistent gaps
-        vertical_gap = 70  # Fixed vertical gap between platforms
+        # Calculate vertical gap based on platform density
+        # Higher density = smaller gap
+        base_gap = 70  # Default gap
+        vertical_gap = int(base_gap / self.platform_density)
+        vertical_gap = max(40, min(100, vertical_gap))  # Constrain between 40-100
+        
+        # Generate initial platforms going upward with density-based spacing
         for i in range(PLATFORM_COUNT):
-            # Calculate y position with fixed spacing
+            # Calculate y position with density-adjusted spacing
             y = SCREEN_HEIGHT - 100 - i * vertical_gap
             
             # Ensure good horizontal distribution
@@ -37,23 +53,8 @@ class Map:
             max_x = (section + 1) * section_width - 120
             x = random.randint(min_x, max_x)
             
-            # Randomize platform type with weights
-            platform_type = random.choices(
-                ["regular", "moving", "disappearing", "dangerous"],
-                weights=[0.65, 0.2, 0.1, 0.05],
-                k=1
-            )[0]
-            
-            # Create the appropriate platform type
-            if platform_type == "regular":
-                platform = Platform(x, y, width=PLATFORM_WIDTH, height=PLATFORM_HEIGHT)
-            elif platform_type == "moving":
-                platform = MovingPlatform(x, y, width=PLATFORM_WIDTH, height=PLATFORM_HEIGHT, speed=self.platform_speed)
-            elif platform_type == "disappearing":
-                platform = DisappearingPlatform(x, y, width=PLATFORM_WIDTH, height=PLATFORM_HEIGHT)
-            elif platform_type == "dangerous":
-                platform = DangerousPlatform(x, y, width=PLATFORM_WIDTH, height=PLATFORM_HEIGHT)
-            
+            # Create platform with the configured probabilities
+            platform = self._create_platform_by_type(x, y)
             self.platforms.append(platform)
         
     def update(self, camera_y):
@@ -75,13 +76,41 @@ class Map:
             if highest_y > screen_top - SCREEN_HEIGHT:
                 self.generate_more_platforms(camera_y)
     
+    def _create_platform_by_type(self, x, y, width=PLATFORM_WIDTH):
+        """Create a platform based on configured percentages"""
+        # Randomize platform type based on configured percentages
+        platform_type = random.choices(
+            ["regular", "moving", "disappearing", "dangerous"],
+            weights=[
+                self.regular_platform_pct, 
+                self.moving_platform_pct,
+                self.disappearing_platform_pct,
+                self.dangerous_platform_pct
+            ],
+            k=1
+        )[0]
+        
+        # Create the appropriate platform type
+        if platform_type == "regular":
+            return Platform(x, y, width=width, height=PLATFORM_HEIGHT)
+        elif platform_type == "moving":
+            return MovingPlatform(x, y, width=width, height=PLATFORM_HEIGHT, speed=self.platform_speed)
+        elif platform_type == "disappearing":
+            return DisappearingPlatform(x, y, width=width, height=PLATFORM_HEIGHT)
+        elif platform_type == "dangerous":
+            return DangerousPlatform(x, y, width=width, height=PLATFORM_HEIGHT)
+    
     def generate_more_platforms(self, camera_y):
         """Generate additional platforms as the player moves up"""
         # Find the highest platform
         highest_y = min([p.y for p in self.platforms]) if self.platforms else SCREEN_HEIGHT
         
-        # Generate more platforms with fixed spacing
-        vertical_gap = 70  # Same as in generate_map
+        # Calculate vertical gap based on platform density
+        base_gap = 70  # Default gap
+        vertical_gap = int(base_gap / self.platform_density)
+        vertical_gap = max(40, min(100, vertical_gap))  # Constrain between 40-100
+        
+        # Generate more platforms with density-adjusted spacing
         platform_count = 10  # Generate more platforms at once for better coverage
         
         # Debug print
@@ -89,7 +118,7 @@ class Map:
             print(f"Generating new platforms. Camera Y: {camera_y}, Highest platform Y: {highest_y}")
         
         for i in range(platform_count):
-            # Position each new platform above the highest one with fixed gap
+            # Position each new platform above the highest one with configured gap
             # Make sure platforms are generated in world coordinates
             y = highest_y - (i + 1) * vertical_gap
             
@@ -104,25 +133,11 @@ class Map:
             else:  # Right section
                 x = random.randint(2 * SCREEN_WIDTH // 3 + 50, SCREEN_WIDTH - 150)
             
-            # Randomize platform type with weights
-            platform_type = random.choices(
-                ["regular", "moving", "disappearing", "dangerous"],
-                weights=[0.7, 0.15, 0.1, 0.05],  # More regular platforms for better gameplay
-                k=1
-            )[0]
-            
             # Create platform with consistent width
             platform_width = random.randint(80, 120)  # Vary width slightly
             
-            # Create the appropriate platform type
-            if platform_type == "regular":
-                platform = Platform(x, y, width=platform_width, height=PLATFORM_HEIGHT)
-            elif platform_type == "moving":
-                platform = MovingPlatform(x, y, width=platform_width, height=PLATFORM_HEIGHT, speed=self.platform_speed)
-            elif platform_type == "disappearing":
-                platform = DisappearingPlatform(x, y, width=platform_width, height=PLATFORM_HEIGHT)
-            elif platform_type == "dangerous":
-                platform = DangerousPlatform(x, y, width=platform_width, height=PLATFORM_HEIGHT)
+            # Create platform using helper method
+            platform = self._create_platform_by_type(x, y, platform_width)
             
             # Ensure platforms don't overlap (simple check)
             overlapping = False
@@ -199,27 +214,35 @@ class Map:
             
             screen.blit(highest_text, (10, 260))
             screen.blit(lowest_text, (10, 280))
-        
-        for i, platform in enumerate(self.platforms):
-            # Only show info for visible or nearly visible platforms
-            screen_y = platform.y - camera_y
-            if screen_y > -platform.height * 3 and screen_y < screen.get_height() + platform.height * 2:
-                # Format: ID (World X,Y) → (Screen X,Y)
-                info_text = f"Platform {platform.id}: ({platform.x:.0f},{platform.y:.0f}) → ({platform.x:.0f},{screen_y:.0f})"
-                if platform.colliding:
-                    info_text += " [COLLIDING]"
-                    
-                text = font.render(info_text, True, BLACK)
-                screen.blit(text, (10, y_pos + 40))
-                y_pos += 20
-                
-                # Limit number of platform info to display
-                if i >= 10:  # Only show 10 platforms max
-                    remaining = len(self.platforms) - i - 1
-                    more_text = font.render(f"...and {remaining} more platforms", True, BLACK)
-                    screen.blit(more_text, (10, y_pos + 40))
-                    break
+            
+            # Also show platform distribution
+            platform_types = {
+                "regular": 0,
+                "moving": 0,
+                "disappearing": 0,
+                "dangerous": 0
+            }
+            
+            for platform in self.platforms:
+                if isinstance(platform, MovingPlatform):
+                    platform_types["moving"] += 1
+                elif isinstance(platform, DisappearingPlatform):
+                    platform_types["disappearing"] += 1
+                elif isinstance(platform, DangerousPlatform):
+                    platform_types["dangerous"] += 1
+                else:
+                    platform_types["regular"] += 1
+            
+            # Display counts
+            dist_y = 300
+            for p_type, count in platform_types.items():
+                dist_text = count_font.render(f"{p_type.capitalize()}: {count}", True, BLACK)
+                screen.blit(dist_text, (10, dist_y))
+                dist_y += 20
     
     def check_collision(self, player):
         # Check if player collides with any platform
-        pass 
+        for platform in self.platforms:
+            if platform.check_collision(player):
+                return platform
+        return None 

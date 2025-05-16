@@ -60,13 +60,58 @@ class Game:
         """Process all game events using the event handler"""
         self.event_handler.handle_events()
     
-    def init_game(self):
-        """Initialize game objects for a new game"""
-        self.player = Player(self.width // 2, self.height - 100)
-        self.current_map = Map()
-        self.current_map.generate_map()  # Generate initial platforms
+    def init_game(self, custom_settings=None):
+        """
+        Initialize game objects for a new game
+        
+        Args:
+            custom_settings (dict, optional): Custom settings for the game
+        """
+        # Create player with default or custom settings
+        if custom_settings:
+            # Apply custom settings to player
+            player_speed = custom_settings.get("player_speed", 5)
+            jump_strength = custom_settings.get("jump_strength", 10)
+            self.player = Player(self.width // 2, self.height - 100, 
+                                speed=player_speed, 
+                                jump_strength=jump_strength)
+            
+            # Pass gravity to player
+            gravity = custom_settings.get("gravity", 0.5)
+            self.player.gravity = gravity
+        else:
+            # Use default settings
+            self.player = Player(self.width // 2, self.height - 100)
+        
+        # Create map with default or custom settings
+        if custom_settings:
+            # Create map with custom settings
+            platform_density = custom_settings.get("platform_density", 2.0)
+            moving_pct = custom_settings.get("moving_platform_pct", 25)
+            disappearing_pct = custom_settings.get("disappearing_platform_pct", 15)
+            dangerous_pct = custom_settings.get("dangerous_platform_pct", 10)
+            
+            self.current_map = Map(
+                platform_density=platform_density,
+                moving_platform_pct=moving_pct,
+                disappearing_platform_pct=disappearing_pct,
+                dangerous_platform_pct=dangerous_pct
+            )
+        else:
+            self.current_map = Map()
+            
+        # Generate initial platforms
+        self.current_map.generate_map()
+        
+        # Reset camera position
         self.camera_y = 0
+        
+        # Initialize score
         self.state_manager.set_state_data("score", 0)
+        
+        # Store custom settings in state data if provided
+        if custom_settings:
+            self.state_manager.set_state_data("custom_settings", custom_settings)
     
     def update(self):
         """Update game state"""

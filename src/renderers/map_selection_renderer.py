@@ -1,5 +1,6 @@
 import pygame
 from src.constants import WHITE, BLACK, GREEN, BLUE, YELLOW, RED
+from src.ui_styles import COLORS, FONT_SIZES, DIMENSIONS, create_centered_text, create_button
 
 class MapSelectionRenderer:
     def __init__(self, screen):
@@ -159,34 +160,147 @@ class MapSelectionRenderer:
         game.official_map_buttons = map_buttons
         
     def render_custom_maps(self, game):
-        """Render the custom maps coming soon screen"""
+        """Render the custom maps configuration screen"""
         # Background
-        background_color = (50, 70, 120)  # Darker blue
-        self.screen.fill(background_color)
+        self.screen.fill(COLORS["BG_CUSTOM_MAPS"])
         
         # Draw header
-        header_font = pygame.font.SysFont(None, 64)
-        header_text = header_font.render("CUSTOM MAPS", True, WHITE)
-        self.screen.blit(header_text, (self.width//2 - header_text.get_width()//2, 150))
+        create_centered_text(
+            self.screen,
+            "CUSTOM MAP SETTINGS",
+            FONT_SIZES["HEADER"],
+            COLORS["TEXT_WHITE"],
+            60
+        )
         
-        # Draw coming soon message
-        message_font = pygame.font.SysFont(None, 36)
-        message_text = message_font.render("The custom maps feature is coming soon!", True, (255, 220, 100))
-        self.screen.blit(message_text, (self.width//2 - message_text.get_width()//2, 250))
+        # Draw decorative line under header
+        pygame.draw.rect(
+            self.screen,
+            COLORS["TEXT_WHITE"],
+            (self.width//2 - 180, 110, 360, 3)
+        )
         
-        # Draw decorative elements
-        pygame.draw.rect(self.screen, (80, 100, 150), (self.width//2 - 150, 320, 300, 5))
+        # Initialize settings if not already done
+        if not hasattr(game, 'custom_map_settings'):
+            game.custom_map_settings = {
+                "gravity": 0.5,
+                "player_speed": 5,
+                "jump_strength": 10,
+                "platform_density": 2.0,
+                "moving_platform_pct": 25,
+                "disappearing_platform_pct": 15,
+                "dangerous_platform_pct": 10,
+                "active_setting": None  # Track which setting is being edited
+            }
         
-        # Draw instruction
-        instruction_font = pygame.font.SysFont(None, 24)
-        instruction_text = instruction_font.render("Press ESC to return", True, WHITE)
-        self.screen.blit(instruction_text, (self.width//2 - instruction_text.get_width()//2, 400))
+        # Common fonts
+        label_font = pygame.font.SysFont(None, FONT_SIZES["STANDARD_TEXT"])
+        value_font = pygame.font.SysFont(None, FONT_SIZES["STANDARD_TEXT"])
         
-        # Draw animated construction icon or similar
-        current_time = pygame.time.get_ticks()
-        animation_frame = (current_time // 500) % 3  # Simple 3-frame animation
+        # Layout settings
+        settings_start_y = 160
+        setting_height = 50
+        label_x = self.width * 0.25
+        value_x = self.width * 0.75
+        slider_width = 200
         
-        # Draw some animated element based on the frame
-        for i in range(3):
-            color = YELLOW if i == animation_frame else (100, 100, 100)
-            pygame.draw.rect(self.screen, color, (self.width//2 - 40 + i*30, 350, 20, 20)) 
+        # Settings and their ranges
+        settings = [
+            {"name": "Gravity", "key": "gravity", "min": 0.1, "max": 1.0, "step": 0.1, "format": "{:.1f}"},
+            {"name": "Player Speed", "key": "player_speed", "min": 3, "max": 8, "step": 1, "format": "{:.0f}"},
+            {"name": "Jump Strength", "key": "jump_strength", "min": 8, "max": 15, "step": 1, "format": "{:.0f}"},
+            {"name": "Platform Density", "key": "platform_density", "min": 1.0, "max": 3.0, "step": 0.5, "format": "{:.1f}"},
+            {"name": "Moving Platforms %", "key": "moving_platform_pct", "min": 0, "max": 50, "step": 5, "format": "{:.0f}%"},
+            {"name": "Disappearing Platforms %", "key": "disappearing_platform_pct", "min": 0, "max": 30, "step": 5, "format": "{:.0f}%"},
+            {"name": "Dangerous Platforms %", "key": "dangerous_platform_pct", "min": 0, "max": 20, "step": 5, "format": "{:.0f}%"}
+        ]
+        
+        # Track slider rectangles for interaction
+        game.custom_map_sliders = {}
+        game.custom_map_buttons = {}
+        
+        # Draw each setting with label, slider, and value
+        for i, setting in enumerate(settings):
+            current_y = settings_start_y + i * setting_height
+            
+            # Label
+            label_text = label_font.render(setting["name"], True, COLORS["TEXT_WHITE"])
+            self.screen.blit(label_text, (label_x - label_text.get_width(), current_y + label_text.get_height()//2))
+            
+            # Get current value
+            current_value = game.custom_map_settings[setting["key"]]
+            
+            # Calculate slider position
+            slider_left = value_x - slider_width//2
+            slider_top = current_y + 7
+            slider_height = 10
+            
+            # Calculate normalized position (0-1) based on min/max
+            value_range = setting["max"] - setting["min"]
+            normalized_pos = (current_value - setting["min"]) / value_range
+            
+            # Draw slider background
+            slider_bg_rect = pygame.Rect(slider_left, slider_top, slider_width, slider_height)
+            pygame.draw.rect(self.screen, (100, 100, 100), slider_bg_rect)
+            
+            # Draw slider fill
+            fill_width = int(normalized_pos * slider_width)
+            slider_fill_rect = pygame.Rect(slider_left, slider_top, fill_width, slider_height)
+            pygame.draw.rect(self.screen, COLORS["BUTTON_BLUE"], slider_fill_rect)
+            
+            # Draw slider handle
+            handle_size = 20
+            handle_x = slider_left + fill_width - handle_size//2
+            handle_y = slider_top + slider_height//2 - handle_size//2
+            handle_rect = pygame.Rect(handle_x, handle_y, handle_size, handle_size)
+            pygame.draw.rect(self.screen, COLORS["TEXT_WHITE"], handle_rect)
+            
+            # Store slider rect for interaction
+            game.custom_map_sliders[setting["key"]] = {
+                "rect": pygame.Rect(slider_left, slider_top - 10, slider_width, slider_height + 20),
+                "min": setting["min"],
+                "max": setting["max"],
+                "step": setting["step"],
+                "format": setting["format"]
+            }
+            
+            # Value text
+            format_string = setting["format"]
+            if "%" in format_string:
+                value_str = format_string.format(current_value)
+            else:
+                value_str = format_string.format(current_value)
+                
+            value_text = value_font.render(value_str, True, COLORS["SETTING_VALUE"])
+            self.screen.blit(value_text, (slider_left + slider_width + 20, current_y + value_text.get_height()//2))
+        
+        # Play button
+        play_button_y = settings_start_y + len(settings) * setting_height + 40
+        play_button_rect = pygame.Rect(self.width//2 - 100, play_button_y, 200, 50)
+        create_button(
+            self.screen, 
+            "PLAY CUSTOM MAP", 
+            play_button_rect,
+            bg_color=COLORS["BUTTON_BLUE"],
+            border_color=COLORS["TEXT_WHITE"],
+            text_color=COLORS["TEXT_WHITE"]
+        )
+        game.custom_map_buttons["play"] = play_button_rect
+        
+        # Reset button
+        reset_button_rect = pygame.Rect(self.width//2 - 100, play_button_y + 70, 200, 40)
+        create_button(
+            self.screen, 
+            "Reset to Default", 
+            reset_button_rect,
+            bg_color=(80, 80, 80),
+            border_color=COLORS["TEXT_WHITE"],
+            text_color=COLORS["TEXT_WHITE"],
+            font_size=FONT_SIZES["SMALL_TEXT"]
+        )
+        game.custom_map_buttons["reset"] = reset_button_rect
+        
+        # Instructions
+        instruction_font = pygame.font.SysFont(None, FONT_SIZES["FOOTER_NOTE"])
+        instruction_text = instruction_font.render("Drag sliders to adjust settings, then click PLAY", True, COLORS["TEXT_WHITE"])
+        self.screen.blit(instruction_text, (self.width//2 - instruction_text.get_width()//2, self.height - 40)) 

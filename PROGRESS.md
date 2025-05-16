@@ -29,25 +29,27 @@
 - [ ] Implement rewards from hitting floating objects
 
 ## 🗺️ Maps and Levels
-- [ ] Create map class/structure
-- [ ] Implement map 1 with basic elements
+- [x] Create map class/structure
+- [x] Implement map 1 with basic elements
 - [ ] Implement map 2 with unique elements
 - [ ] Implement map 3 with unique elements
 - [ ] Implement map 4 with unique elements
-- [ ] Add custom settings for each map (gravity, speed)
-- [ ] Implement color themes for each map
+- [x] Add custom settings for each map (gravity, speed)
+- [x] Implement color themes for each map
+- [x] Create custom map configuration screen
 
 ## 🖼️ UI and Menus
-- [x] Create main menu screen
+- [x] Create main menu with options
 - [x] Implement map selection menu
-- [x] Add "How to Play" instructions screen
-- [x] Improve map selection navigation flow
+- [x] Create settings menu with volume controls
+- [x] Design game over screen with retry option
+- [x] Develop how-to-play screen with game instructions
+- [ ] Improve map selection navigation flow
 - [x] Create UI style guide and constants
 - [ ] Design and implement in-game HUD:
   - [ ] Score counter
   - [ ] Floating object hit counters
   - [ ] Jump counters on platforms
-- [x] Create game over screen
 
 ## ⚙️ Settings
 - [ ] Implement global settings menu
