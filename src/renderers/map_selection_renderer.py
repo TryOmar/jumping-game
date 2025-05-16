@@ -200,8 +200,10 @@ class MapSelectionRenderer:
         # Layout settings
         settings_start_y = 160
         setting_height = 50
-        label_x = self.width * 0.25
-        value_x = self.width * 0.75
+        
+        # Position settings (similar to settings screen)
+        left_margin = 80
+        right_margin = self.width - 300
         slider_width = 200
         
         # Settings and their ranges
@@ -225,13 +227,13 @@ class MapSelectionRenderer:
             
             # Label
             label_text = label_font.render(setting["name"], True, COLORS["TEXT_WHITE"])
-            self.screen.blit(label_text, (label_x - label_text.get_width(), current_y + label_text.get_height()//2))
+            self.screen.blit(label_text, (left_margin, current_y + label_text.get_height()//2))
             
             # Get current value
             current_value = game.custom_map_settings[setting["key"]]
             
             # Calculate slider position
-            slider_left = value_x - slider_width//2
+            slider_left = right_margin
             slider_top = current_y + 7
             slider_height = 10
             
@@ -276,7 +278,7 @@ class MapSelectionRenderer:
         
         # Play button
         play_button_y = settings_start_y + len(settings) * setting_height + 40
-        play_button_rect = pygame.Rect(self.width//2 - 100, play_button_y, 200, 50)
+        play_button_rect = pygame.Rect(self.width//2 - 150, play_button_y, 300, 50)  # Wider button (300px instead of 200px)
         create_button(
             self.screen, 
             "PLAY CUSTOM MAP", 
@@ -300,7 +302,11 @@ class MapSelectionRenderer:
         )
         game.custom_map_buttons["reset"] = reset_button_rect
         
-        # Instructions
+        # Instructions - moved much higher above the buttons
         instruction_font = pygame.font.SysFont(None, FONT_SIZES["FOOTER_NOTE"])
         instruction_text = instruction_font.render("Drag sliders to adjust settings, then click PLAY", True, COLORS["TEXT_WHITE"])
-        self.screen.blit(instruction_text, (self.width//2 - instruction_text.get_width()//2, self.height - 40)) 
+        # Position between the reset button and the bottom of the screen
+        reset_button_bottom = reset_button_rect.bottom
+        space_below = self.height - reset_button_bottom
+        instruction_y = reset_button_bottom + (space_below // 3)  # Position 1/3 of the way between reset button and bottom
+        self.screen.blit(instruction_text, (self.width//2 - instruction_text.get_width()//2, instruction_y)) 

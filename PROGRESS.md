@@ -44,7 +44,7 @@
 - [x] Create settings menu with volume controls
 - [x] Design game over screen with retry option
 - [x] Develop how-to-play screen with game instructions
-- [ ] Improve map selection navigation flow
+- [x] Improve map selection navigation flow
 - [x] Create UI style guide and constants
 - [ ] Design and implement in-game HUD:
   - [ ] Score counter
