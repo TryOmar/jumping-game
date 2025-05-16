@@ -11,55 +11,120 @@ class MapSelectionRenderer:
     def render_map_type_selection(self, game):
         """Render the map selection screen with Official and Custom map options"""
         # Background
-        background_color = (70, 120, 170)  # Slightly different blue from main menu
-        self.screen.fill(background_color)
+        self.screen.fill(COLORS["BG_MAP_SELECTION"])
         
-        # Draw header
-        header_font = pygame.font.SysFont(None, 56)
-        header_text = header_font.render("SELECT MAP TYPE", True, WHITE)
-        self.screen.blit(header_text, (self.width//2 - header_text.get_width()//2, 80))
+        # Draw header with subtle shadow for depth
+        create_centered_text(
+            self.screen,
+            "SELECT MAP TYPE",
+            FONT_SIZES["HEADER"],
+            COLORS["TEXT_WHITE"],
+            80
+        )
         
-        # Draw two main buttons: Official Maps and Custom Maps
-        button_width, button_height = 300, 100
-        padding = 40
+        # Add decorative underline for consistency with other screens
+        pygame.draw.rect(
+            self.screen, 
+            COLORS["TEXT_WHITE"], 
+            (self.width//2 - 180, 135, 360, 3)
+        )
         
-        # Official Maps button
-        official_rect = pygame.Rect(self.width//2 - button_width - padding//2, 200, button_width, button_height)
-        pygame.draw.rect(self.screen, (40, 80, 120), official_rect)
-        pygame.draw.rect(self.screen, WHITE, official_rect, 3)  # Button border
+        # Draw two main buttons: Official Maps and Custom Maps with improved styling
+        button_width = DIMENSIONS["BUTTON_WIDTH"]
+        button_height = DIMENSIONS["BUTTON_HEIGHT"]
+        padding = DIMENSIONS["BUTTON_PADDING"]
+        button_y = 200
         
-        official_font = pygame.font.SysFont(None, 36)
-        official_text = official_font.render("OFFICIAL MAPS", True, WHITE)
-        self.screen.blit(official_text, (official_rect.centerx - official_text.get_width()//2, 
-                                      official_rect.centery - official_text.get_height()//2))
+        # Official Maps button with subtle shadow for depth
+        official_x = self.width//2 - button_width - padding//2
+        official_rect = pygame.Rect(official_x, button_y, button_width, button_height)
         
-        # Custom Maps button
-        custom_rect = pygame.Rect(self.width//2 + padding//2, 200, button_width, button_height)
-        pygame.draw.rect(self.screen, (40, 80, 120), custom_rect)
-        pygame.draw.rect(self.screen, WHITE, custom_rect, 3)  # Button border
+        # Draw shadow
+        shadow_rect = pygame.Rect(official_x + 5, button_y + 5, button_width, button_height)
+        pygame.draw.rect(self.screen, (30, 60, 90), shadow_rect)
         
-        custom_font = pygame.font.SysFont(None, 36)
-        custom_text = custom_font.render("CUSTOM MAPS", True, WHITE)
-        self.screen.blit(custom_text, (custom_rect.centerx - custom_text.get_width()//2, 
-                                    custom_rect.centery - custom_text.get_height()//2))
+        # Draw main button
+        create_button(
+            self.screen, 
+            "OFFICIAL MAPS", 
+            official_rect,
+            bg_color=COLORS["BUTTON_BLUE"],
+            border_color=COLORS["TEXT_WHITE"],
+            text_color=COLORS["TEXT_WHITE"],
+            font_size=FONT_SIZES["MENU_OPTION"]
+        )
         
-        # Add description text for each option
-        desc_font = pygame.font.SysFont(None, 24)
+        # Custom Maps button with subtle shadow for depth
+        custom_x = self.width//2 + padding//2
+        custom_rect = pygame.Rect(custom_x, button_y, button_width, button_height)
         
+        # Draw shadow
+        shadow_rect = pygame.Rect(custom_x + 5, button_y + 5, button_width, button_height)
+        pygame.draw.rect(self.screen, (30, 60, 90), shadow_rect)
+        
+        # Draw main button
+        create_button(
+            self.screen, 
+            "CUSTOM MAPS", 
+            custom_rect,
+            bg_color=COLORS["BUTTON_BLUE"],
+            border_color=COLORS["TEXT_WHITE"],
+            text_color=COLORS["TEXT_WHITE"],
+            font_size=FONT_SIZES["MENU_OPTION"]
+        )
+        
+        # Add description text for each option - fixed alignment
+        desc_font = pygame.font.SysFont(None, FONT_SIZES["SMALL_TEXT"])
+        
+        # Create background areas for descriptions to improve readability
+        desc_padding = 10
+        desc_height = 30
+        
+        # Official maps description
         official_desc = "Pre-designed levels with progressive difficulty"
-        official_desc_text = desc_font.render(official_desc, True, (220, 220, 220))
-        self.screen.blit(official_desc_text, (official_rect.centerx - official_desc_text.get_width()//2, 
-                                           official_rect.bottom + 10))
+        official_desc_text = desc_font.render(official_desc, True, COLORS["DESCRIPTION_TEXT"])
+        official_desc_width = official_desc_text.get_width() + desc_padding * 2
         
+        official_desc_bg = pygame.Rect(
+            official_rect.centerx - official_desc_width//2,
+            official_rect.bottom + 10, 
+            official_desc_width, 
+            desc_height
+        )
+        pygame.draw.rect(self.screen, (40, 80, 120, 128), official_desc_bg, 0, 5)
+        
+        self.screen.blit(
+            official_desc_text, 
+            (official_rect.centerx - official_desc_text.get_width()//2, official_rect.bottom + 15)
+        )
+        
+        # Custom maps description
         custom_desc = "Create your own levels or play randomly generated maps"
-        custom_desc_text = desc_font.render(custom_desc, True, (220, 220, 220))
-        self.screen.blit(custom_desc_text, (custom_rect.centerx - custom_desc_text.get_width()//2, 
-                                         custom_rect.bottom + 10))
+        custom_desc_text = desc_font.render(custom_desc, True, COLORS["DESCRIPTION_TEXT"])
+        custom_desc_width = custom_desc_text.get_width() + desc_padding * 2
         
-        # Instructions
-        instruction_font = pygame.font.SysFont(None, 24)
-        instruction_text = instruction_font.render("Click on a map type to select, or press ESC to return", True, WHITE)
-        self.screen.blit(instruction_text, (self.width//2 - instruction_text.get_width()//2, self.height - 40))
+        custom_desc_bg = pygame.Rect(
+            custom_rect.centerx - custom_desc_width//2,
+            custom_rect.bottom + 10, 
+            custom_desc_width, 
+            desc_height
+        )
+        pygame.draw.rect(self.screen, (40, 80, 120, 128), custom_desc_bg, 0, 5)
+        
+        self.screen.blit(
+            custom_desc_text, 
+            (custom_rect.centerx - custom_desc_text.get_width()//2, custom_rect.bottom + 15)
+        )
+        
+        # Instructions with improved styling
+        instruction_text = "Click on a map type to select, or press ESC to return"
+        create_centered_text(
+            self.screen,
+            instruction_text,
+            FONT_SIZES["FOOTER_NOTE"],
+            COLORS["TEXT_WHITE"],
+            self.height - 40
+        )
         
         # Store button rectangles in the game object for click detection
         game.map_selection_buttons = {
