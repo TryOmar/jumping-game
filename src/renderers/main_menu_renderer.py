@@ -27,6 +27,8 @@ class MainMenuRenderer:
         option_height = DIMENSIONS["OPTION_HEIGHT"]
         start_y = self.height // 2
         
+        game.menu_option_rects = [] # Initialize the list to store rects
+
         for i, option in enumerate(game.menu_options):
             # Determine if this option is selected
             is_selected = (i == game.selected_option)
@@ -43,6 +45,10 @@ class MainMenuRenderer:
             option_x = self.width//2 - option_text.get_width()//2
             self.screen.blit(option_text, (option_x, option_y))
             
+            # Store the rectangle for click detection
+            option_rect = option_text.get_rect(topleft=(option_x, option_y))
+            game.menu_option_rects.append(option_rect)
+
             # Draw indicator if selected
             if is_selected:
                 # Draw arrow or highlight
