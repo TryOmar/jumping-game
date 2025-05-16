@@ -18,7 +18,7 @@ class MapSelectionRenderer:
                 "config": {
                     "gravity": 0.7,
                     "player_speed": 3,
-                    "jump_strength": 8,
+                    "jump_strength": 15,
                     "platform_density": 1.5,
                     "moving_platform_pct": 10,
                     "disappearing_platform_pct": 5,
@@ -33,7 +33,7 @@ class MapSelectionRenderer:
                 "config": {
                     "gravity": 0.6,
                     "player_speed": 4,
-                    "jump_strength": 9,
+                    "jump_strength": 13,
                     "platform_density": 1.8,
                     "moving_platform_pct": 15,
                     "disappearing_platform_pct": 10,
@@ -48,7 +48,7 @@ class MapSelectionRenderer:
                 "config": {
                     "gravity": 0.5,
                     "player_speed": 5,
-                    "jump_strength": 11,
+                    "jump_strength": 12,
                     "platform_density": 2.2,
                     "moving_platform_pct": 20,
                     "disappearing_platform_pct": 15,
@@ -63,7 +63,7 @@ class MapSelectionRenderer:
                 "config": {
                     "gravity": 0.4,
                     "player_speed": 6,
-                    "jump_strength": 12,
+                    "jump_strength": 8,
                     "platform_density": 2.5,
                     "moving_platform_pct": 25,
                     "disappearing_platform_pct": 20,

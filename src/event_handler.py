@@ -302,6 +302,8 @@ class EventHandler:
                         self.game.state_manager.change_state(GameState.PLAYING)
                     elif self.game.pause_selected_option == 1: 
                         self.game.state_manager.change_state(GameState.MAIN_MENU)
+            elif event.key == pygame.K_1:
+                self.game.state_manager.change_state(GameState.MAIN_MENU)
             elif event.key == pygame.K_UP:
                 if hasattr(self.game, 'pause_selected_option') and hasattr(self.game, 'pause_menu_options'):
                     self.game.pause_selected_option = (self.game.pause_selected_option - 1) % len(self.game.pause_menu_options)
