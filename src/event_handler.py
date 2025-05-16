@@ -1,6 +1,6 @@
 import pygame
 from src.game_state import GameState
-from src.config.settings import update_setting
+from src.config.settings import update_setting, get_setting
 
 class EventHandler:
     def __init__(self, game):
@@ -17,21 +17,17 @@ class EventHandler:
             # --- Global Key Presses (Processed for all states if not consumed by state-specific handler) ---
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_F11:
-                    current_fullscreen = self.game.screen.get_flags() & pygame.FULLSCREEN
-                    new_fullscreen_setting = not bool(current_fullscreen)
+                    # This specific F11 handling directly toggles based on current display state
+                    # and updates settings. It might be better to consolidate with settings screen logic.
+                    current_fullscreen_flags = pygame.display.get_surface().get_flags() & pygame.FULLSCREEN
+                    new_fullscreen_setting = not bool(current_fullscreen_flags)
                     update_setting('WINDOW', 'fullscreen', new_fullscreen_setting)
-                    flags = pygame.FULLSCREEN if new_fullscreen_setting else 0
-                    self.game.screen = pygame.display.set_mode((self.game.width, self.game.height), flags)
-                    self.game.renderer.init_renderers()
-                    # This event is consumed, no further processing for F11.
-                    # However, it doesn't prevent other events in the same frame from being processed by states.
+                    self.game.renderer.settings_renderer.fullscreen_enabled = new_fullscreen_setting # Update renderer state
+                    if hasattr(self.game, 'temporary_settings'):
+                        self.game.temporary_settings['fullscreen'] = new_fullscreen_setting
 
-                # General Escape Key Logic (can be overridden by states)
-                # Note: Specific states like PLAYING/PAUSED handle ESCAPE directly in their event handlers.
-                # This general ESCAPE is for menus/info screens.
-                # The `handle_..._event` methods for specific states will get the ESCAPE first.
-                # If they don't consume it (e.g. by returning or changing state), then this can be a fallback.
-                # However, the current structure has explicit ESC handling in most relevant states.
+                    display_settings = self.game.renderer.settings_renderer.get_current_display_settings()
+                    self._apply_display_settings(display_settings) # Apply immediately
 
                 if event.key == pygame.K_F1:
                     self.game.toggle_debug()
@@ -88,29 +84,68 @@ class EventHandler:
                         self._handle_menu_selection()
                         break
 
-    def _handle_settings_event(self, event): # Changed from _handle_settings_events
+    def _handle_settings_event(self, event):
+        settings_renderer = self.game.renderer.settings_renderer
+        # Initialize temporary_settings from renderer if not already on game object
+        if not hasattr(self.game, 'temporary_settings') or self.game.temporary_settings is None:
+            if hasattr(settings_renderer, 'current_resolution_idx') and hasattr(settings_renderer, 'fullscreen_enabled'):
+                 self.game.temporary_settings = {
+                    'resolution_idx': settings_renderer.current_resolution_idx,
+                    'fullscreen': settings_renderer.fullscreen_enabled
+                }
+            else: # Fallback if renderer not fully initialized with these attributes
+                self.game.temporary_settings = {
+                    'resolution_idx': 0, # Default
+                    'fullscreen': get_setting("WINDOW", "fullscreen", False)
+                }
+
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
-                # Apply settings on ESC from settings screen
-                if hasattr(self.game.renderer, 'settings_renderer') and hasattr(self.game.renderer.settings_renderer, 'apply_settings'):
-                     settings = self.game.renderer.settings_renderer.apply_settings()
-                     self._apply_display_settings(settings) # Apply display settings if any
-                self.game.apply_audio_settings() # Ensure audio settings are applied
-                self.game.state_manager.change_state(GameState.MAIN_MENU) # Or return_to_previous if that's desired
+                applied_settings = settings_renderer.apply_settings()
+                self._apply_display_settings(applied_settings.get("WINDOW"))
+                self.game.apply_audio_settings()
+                self.game.state_manager.change_state(GameState.MAIN_MENU)
+        
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            mouse_pos = event.pos
+            # Slider interaction
             if hasattr(self.game, 'settings_sliders'):
                 for key, slider_info in self.game.settings_sliders.items():
-                    if slider_info["rect"].collidepoint(event.pos):
+                    if slider_info["rect"].collidepoint(mouse_pos):
                         self.dragging_slider = key
-                        self._update_slider_value(key, event.pos[0], self.game.settings_sliders, self.game.audio_settings)
-                        break
+                        self._update_slider_value(key, mouse_pos[0], self.game.settings_sliders, self.game.audio_settings)
+                        # No break here, allow other buttons to be checked if somehow overlapping (though unlikely)
+            
+            # Button interaction
             if hasattr(self.game, 'settings_buttons'):
-                if "back" in self.game.settings_buttons and self.game.settings_buttons["back"].collidepoint(event.pos):
-                    if hasattr(self.game.renderer, 'settings_renderer') and hasattr(self.game.renderer.settings_renderer, 'apply_settings'):
-                        settings = self.game.renderer.settings_renderer.apply_settings()
-                        self._apply_display_settings(settings)
-                    self.game.apply_audio_settings()
-                    self.game.state_manager.change_state(GameState.MAIN_MENU)
+                buttons = self.game.settings_buttons
+                for button_key, rect in buttons.items():
+                    if rect.collidepoint(mouse_pos):
+                        if button_key == "back":
+                            applied_settings = settings_renderer.apply_settings()
+                            self._apply_display_settings(applied_settings.get("WINDOW"))
+                            self.game.apply_audio_settings()
+                            self.game.state_manager.change_state(GameState.MAIN_MENU)
+                            return # Event handled
+                        elif button_key == 'res_left':
+                            if 'resolution_idx' in self.game.temporary_settings:
+                                current_idx = self.game.temporary_settings['resolution_idx']
+                                num_res = len(settings_renderer.resolutions)
+                                self.game.temporary_settings['resolution_idx'] = (current_idx - 1 + num_res) % num_res
+                                settings_renderer.update_local_settings_from_game(self.game.temporary_settings)
+                            return # Event handled
+                        elif button_key == 'res_right':
+                            if 'resolution_idx' in self.game.temporary_settings:
+                                current_idx = self.game.temporary_settings['resolution_idx']
+                                num_res = len(settings_renderer.resolutions)
+                                self.game.temporary_settings['resolution_idx'] = (current_idx + 1) % num_res
+                                settings_renderer.update_local_settings_from_game(self.game.temporary_settings)
+                            return # Event handled
+                        elif button_key == 'fullscreen_toggle':
+                            if 'fullscreen' in self.game.temporary_settings:
+                                self.game.temporary_settings['fullscreen'] = not self.game.temporary_settings['fullscreen']
+                                settings_renderer.update_local_settings_from_game(self.game.temporary_settings)
+                            return # Event handled
 
         elif event.type == pygame.MOUSEMOTION:
             if self.dragging_slider and hasattr(self.game, 'settings_sliders'):
@@ -118,10 +153,7 @@ class EventHandler:
         
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             if self.dragging_slider:
-                # Apply settings when slider is released (audio is live, display on exit)
-                # self.game.apply_audio_settings() # Audio is applied live by _update_slider_value
                 self.dragging_slider = None
-
 
     def handle_map_selection_event(self, event): # Changed from handle_map_selection_events
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
@@ -146,6 +178,7 @@ class EventHandler:
                     map_config = self.game.official_map_configs[selected_map_key]
                     # Store the selected official map config for retry
                     self.game.state_manager.set_state_data("last_map_settings", map_config)
+                    self.game.state_manager.set_state_data("last_map_id", selected_map_key) # Store map_id for high scores
                     self.game.init_game(custom_settings=map_config)
                     self.game.state_manager.change_state(GameState.PLAYING)
                 return 
@@ -164,6 +197,7 @@ class EventHandler:
                 if selected_map_key in self.game.official_map_configs:
                     map_config = self.game.official_map_configs[selected_map_key]
                     self.game.state_manager.set_state_data("last_map_settings", map_config)
+                    self.game.state_manager.set_state_data("last_map_id", selected_map_key) # Store map_id
                     self.game.init_game(custom_settings=map_config)
                     self.game.state_manager.change_state(GameState.PLAYING)
 
@@ -173,6 +207,7 @@ class EventHandler:
             if "play" in self.game.custom_map_buttons and self.game.custom_map_buttons["play"].collidepoint(mouse_pos):
                 # Store the custom map config for retry
                 self.game.state_manager.set_state_data("last_map_settings", self.game.custom_map_settings.copy())
+                self.game.state_manager.set_state_data("last_map_id", "custom") # Store map_id
                 self.game.init_game(custom_settings=self.game.custom_map_settings)
                 self.game.state_manager.change_state(GameState.PLAYING)
                 return
@@ -182,8 +217,9 @@ class EventHandler:
                     "gravity": 0.5, "player_speed": 5, "jump_strength": 10,
                     "platform_density": 2.0, "moving_platform_pct": 25,
                     "disappearing_platform_pct": 15, "dangerous_platform_pct": 10,
-                    "active_setting": None
+                    "active_setting": None # This might need to be reset if used by renderer
                 }
+                # Potentially call a method on custom_maps_renderer to reset its internal state if any
                 return
 
             if hasattr(self.game, 'custom_map_sliders'):
@@ -191,7 +227,7 @@ class EventHandler:
                     if slider_info["rect"].collidepoint(mouse_pos):
                         self.dragging_slider = key
                         self._update_slider_value(key, mouse_pos[0], self.game.custom_map_sliders, self.game.custom_map_settings)
-                        break
+                        break # Assuming only one slider can be dragged at a time
         
         elif event.type == pygame.MOUSEMOTION:
             if self.dragging_slider and hasattr(self.game, 'custom_map_sliders'):
@@ -206,6 +242,7 @@ class EventHandler:
                 self.game.state_manager.change_state(GameState.MAP_SELECT)
             elif event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
                 self.game.state_manager.set_state_data("last_map_settings", self.game.custom_map_settings.copy())
+                self.game.state_manager.set_state_data("last_map_id", "custom") # Store map_id
                 self.game.init_game(custom_settings=self.game.custom_map_settings)
                 self.game.state_manager.change_state(GameState.PLAYING)
 
@@ -221,7 +258,7 @@ class EventHandler:
                 if self.game.player: # Ensure player exists
                     enabled = self.game.player.toggle_auto_jump()
                     status = "enabled" if enabled else "disabled"
-                    print(f"Auto-jump {status}")
+                    # print(f"Auto-jump {status}") # Reduce console spam, handled by visual
                     self.game.show_auto_jump_message = True
                     self.game.auto_jump_message_time = pygame.time.get_ticks()
                     self.game.auto_jump_status = enabled
@@ -265,25 +302,26 @@ class EventHandler:
             elif event.key == pygame.K_ESCAPE: # Allow ESC from game over to go to main menu
                  self.game.state_manager.change_state(GameState.MAIN_MENU)
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            if hasattr(self.game, 'game_over_button_rects'):
-                    for i, rect in enumerate(self.game.game_over_button_rects):
-                        if rect.collidepoint(event.pos):
-                            if hasattr(self.game, 'game_over_buttons') and i < len(self.game.game_over_buttons):
-                                self.game.game_over_selected_option = i
-                                self._handle_game_over_selection()
-                                break
+            if hasattr(self.game, 'game_over_button_rects'): # Ensure rects are available
+                for i, rect in enumerate(self.game.game_over_button_rects):
+                    if rect.collidepoint(event.pos):
+                        if hasattr(self.game, 'game_over_buttons') and i < len(self.game.game_over_buttons):
+                            self.game.game_over_selected_option = i
+                            self._handle_game_over_selection()
+                            break
                             
     def _handle_game_over_selection(self):
         if hasattr(self.game, 'game_over_buttons') and self.game.game_over_buttons and \
+           hasattr(self.game, 'game_over_selected_option') and \
            0 <= self.game.game_over_selected_option < len(self.game.game_over_buttons):
             selected_action = self.game.game_over_buttons[self.game.game_over_selected_option]["action"]
             if selected_action == "retry":
                 last_settings = self.game.state_manager.get_state_data().get("last_map_settings")
                 if last_settings:
+                    last_map_id = self.game.state_manager.get_state_data().get("last_map_id", "default")
                     self.game.init_game(custom_settings=last_settings)
                     self.game.state_manager.change_state(GameState.PLAYING)
                 else: 
-                    # Fallback: if no specific last map settings, go to map select to choose one
                     self.game.state_manager.change_state(GameState.MAP_SELECT)
             elif selected_action == "main_menu":
                 self.game.state_manager.change_state(GameState.MAIN_MENU)
@@ -293,27 +331,34 @@ class EventHandler:
             if event.key == pygame.K_ESCAPE:
                 self.game.state_manager.change_state(GameState.MAIN_MENU)
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1: 
+            # Any click on how to play screen returns to main menu
             self.game.state_manager.change_state(GameState.MAIN_MENU)
 
-    def _apply_display_settings(self, settings):
-        if not settings: return
-        resolution = settings.get('resolution')
-        fullscreen = settings.get('fullscreen')
-        current_w, current_h = self.game.screen.get_size()
-        current_fullscreen = (pygame.display.get_surface().get_flags() & pygame.FULLSCREEN) != 0
+    def _apply_display_settings(self, window_settings):
+        if not window_settings: return
 
-        resolution_changed = resolution and (resolution[0] != current_w or resolution[1] != current_h)
-        fullscreen_changed = fullscreen is not None and fullscreen != current_fullscreen
+        resolution = window_settings.get('resolution')
+        fullscreen = window_settings.get('fullscreen')
+        current_w, current_h = self.game.screen.get_size()
+        current_fullscreen_flag = (pygame.display.get_surface().get_flags() & pygame.FULLSCREEN) != 0
+
+        resolution_changed = False
+        if resolution and (resolution[0] != current_w or resolution[1] != current_h):
+            resolution_changed = True
+        
+        fullscreen_changed = False
+        if fullscreen is not None and fullscreen != current_fullscreen_flag:
+            fullscreen_changed = True
 
         if resolution_changed or fullscreen_changed:
             new_res = resolution if resolution_changed else (current_w, current_h)
-            new_fs_flag = pygame.FULLSCREEN if (fullscreen if fullscreen_changed else current_fullscreen) else 0
+            new_fs_flag = pygame.FULLSCREEN if (fullscreen if fullscreen_changed else current_fullscreen_flag) else 0
             
             self.game.screen = pygame.display.set_mode(new_res, new_fs_flag)
             self.game.width, self.game.height = new_res
-            self.game.renderer.screen = self.game.screen
-            self.game.renderer.init_renderers()
-
+            if hasattr(self.game, 'renderer') and self.game.renderer is not None:
+                self.game.renderer.screen = self.game.screen # Update renderer's screen reference
+                self.game.renderer.init_renderers() # Re-initialize all sub-renderers
 
     def _update_slider_value(self, slider_key, mouse_x, sliders_dict, settings_dict):
         slider_info = sliders_dict.get(slider_key)
@@ -332,13 +377,14 @@ class EventHandler:
             value = raw_value
         value = round(max(min_val, min(max_val, value)), 2) # Round to 2 for floats, clamp
 
-        if isinstance(settings_dict.get(slider_key), int) and step == 1: # Treat as int if original and step are int
+        # Ensure the settings_dict (e.g., game.audio_settings) is correctly updated
+        if isinstance(settings_dict.get(slider_key), int) and step == 1: 
             settings_dict[slider_key] = int(value)
-        else: # Otherwise, treat as float (or percentage if applicable)
+        else: 
             settings_dict[slider_key] = value
 
-
-        if slider_key in ['master_volume', 'sfx_volume', 'music_volume']: # Apply audio immediately
+        # Apply audio immediately if it's an audio setting
+        if slider_key in ['master_volume', 'sfx_volume', 'music_volume'] and settings_dict is self.game.audio_settings:
              self.game.apply_audio_settings()
     
     def _handle_menu_selection(self):
