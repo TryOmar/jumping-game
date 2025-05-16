@@ -135,7 +135,9 @@ class EventHandler:
                             if 'resolution_idx' in self.game.temporary_settings:
                                 current_idx = self.game.temporary_settings['resolution_idx']
                                 num_res = len(settings_renderer.resolutions)
-                                self.game.temporary_settings['resolution_idx'] = (current_idx - 1 + num_res) % num_res
+                                new_idx = (current_idx - 1 + num_res) % num_res
+                                self.game.temporary_settings['resolution_idx'] = new_idx
+                                print(f"Resolution changed to index {new_idx}: {settings_renderer.resolutions[new_idx]}")
                                 settings_renderer.update_local_settings_from_game(self.game.temporary_settings)
                                 
                                 # Apply display settings immediately
@@ -149,7 +151,9 @@ class EventHandler:
                             if 'resolution_idx' in self.game.temporary_settings:
                                 current_idx = self.game.temporary_settings['resolution_idx']
                                 num_res = len(settings_renderer.resolutions)
-                                self.game.temporary_settings['resolution_idx'] = (current_idx + 1) % num_res
+                                new_idx = (current_idx + 1) % num_res
+                                self.game.temporary_settings['resolution_idx'] = new_idx
+                                print(f"Resolution changed to index {new_idx}: {settings_renderer.resolutions[new_idx]}")
                                 settings_renderer.update_local_settings_from_game(self.game.temporary_settings)
                                 
                                 # Apply display settings immediately
@@ -377,15 +381,24 @@ class EventHandler:
         resolution_changed = False
         if resolution and (resolution[0] != current_w or resolution[1] != current_h):
             resolution_changed = True
+            # Update settings in config file so they persist
+            update_setting("WINDOW", "width", resolution[0])
+            update_setting("WINDOW", "height", resolution[1])
         
         fullscreen_changed = False
         if fullscreen is not None and fullscreen != current_fullscreen_flag:
             fullscreen_changed = True
+            # Update fullscreen setting in config file
+            update_setting("WINDOW", "fullscreen", fullscreen)
 
         if resolution_changed or fullscreen_changed:
             new_res = resolution if resolution_changed else (current_w, current_h)
             new_fs_flag = pygame.FULLSCREEN if (fullscreen if fullscreen_changed else current_fullscreen_flag) else 0
             
+            print(f"Changing display mode: Resolution: {new_res}, Fullscreen: {bool(new_fs_flag)}")
+            
+            # Force close and reopen screen to apply changes reliably
+            pygame.display.quit()
             self.game.screen = pygame.display.set_mode(new_res, new_fs_flag)
             self.game.width, self.game.height = new_res
             if hasattr(self.game, 'renderer') and self.game.renderer is not None:

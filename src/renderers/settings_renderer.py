@@ -248,7 +248,26 @@ class SettingsRenderer:
 
     def get_current_display_settings(self):
         """Returns current display settings for EventHandler to pass to game for screen update"""
+        # Ensure we have a valid resolution index
+        if not hasattr(self, 'current_resolution_idx') or self.current_resolution_idx >= len(self.resolutions):
+            # Fallback to the default resolution if invalid
+            self.current_resolution_idx = 0
+            for i, res in enumerate(self.resolutions):
+                current_w = get_setting("WINDOW", "width", 800)
+                current_h = get_setting("WINDOW", "height", 600)
+                if res[0] == current_w and res[1] == current_h:
+                    self.current_resolution_idx = i
+                    break
+                    
+        # Ensure fullscreen state is valid
+        if not hasattr(self, 'fullscreen_enabled'):
+            self.fullscreen_enabled = get_setting("WINDOW", "fullscreen", False)
+            
+        resolution = self.resolutions[self.current_resolution_idx]
+        # Print for debugging
+        print(f"Returning display settings: Resolution {resolution}, Fullscreen: {self.fullscreen_enabled}")
+        
         return {
-            "resolution": self.resolutions[self.current_resolution_idx],
+            "resolution": resolution,
             "fullscreen": self.fullscreen_enabled
         }
