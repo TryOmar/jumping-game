@@ -157,3 +157,30 @@ class Player:
         # Any additional death effects can be added here
         # Change color, play animation, etc.
         self.color = (255, 0, 0)  # Change to red when dead 
+
+    def reset(self, x=None, y=None):
+        """
+        Reset the player's state to initial conditions
+        
+        Args:
+            x (float, optional): New x position. If None, keeps current x.
+            y (float, optional): New y position. If None, keeps current y.
+        """
+        # Reset position if new coordinates are provided
+        if x is not None:
+            self.x = x
+        if y is not None:
+            self.y = y
+        
+        # Reset physics properties
+        self.vel_x = 0
+        self.vel_y = 0
+        self.is_jumping = False
+        self.on_ground = False
+        
+        # Reset sound and jump flags
+        self.landing_sound_played = False
+        self.auto_jump_cooldown = 0
+        
+        # Ensure auto-jump is reset to default
+        self.auto_jump_enabled = True 

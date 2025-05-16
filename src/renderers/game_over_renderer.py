@@ -65,7 +65,7 @@ class GameOverRenderer:
         
         # Define button data (label and action) - THIS IS CRITICAL
         buttons_data = [
-            {"label": "Try Again", "action": "retry"},
+            {"label": "Try Again", "action": "try_again"},
             {"label": "Main Menu", "action": "main_menu"}
         ]
         game.game_over_buttons = buttons_data # Store the data list

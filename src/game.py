@@ -127,9 +127,24 @@ class Game:
             # Pass gravity to player
             gravity = custom_settings.get("gravity", 0.5)
             self.player.gravity = gravity
+            
+            # Reset player with new settings
+            self.player.reset(x=self.width // 2, y=self.height - 100)
         else:
             # Use default settings
-            self.player = Player(self.width // 2, self.height - 100)
+            if self.player is None:
+                self.player = Player(self.width // 2, self.height - 100)
+            else:
+                # Reset existing player
+                self.player.reset(x=self.width // 2, y=self.height - 100)
+        
+        # Reset player physics properties
+        self.player.vel_x = 0
+        self.player.vel_y = 0
+        self.player.is_jumping = False
+        self.player.on_ground = False
+        self.player.landing_sound_played = False
+        self.player.auto_jump_cooldown = 0
         
         # Set game reference in player for sound effects
         self.player.set_game(self)
@@ -152,6 +167,9 @@ class Game:
             )
         else:
             self.current_map = Map(platform_count_per_generation=10)
+        
+        # Clear existing platforms
+        self.current_map.platforms.clear()
         
         # Set game reference in map for sound effects
         self.current_map.set_game(self)

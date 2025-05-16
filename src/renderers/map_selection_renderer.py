@@ -33,7 +33,7 @@ class MapSelectionRenderer:
                 "config": {
                     "gravity": 0.6,
                     "player_speed": 4,
-                    "jump_strength": 13,
+                    "jump_strength": 16,
                     "platform_density": 1.8,
                     "moving_platform_pct": 15,
                     "disappearing_platform_pct": 10,
@@ -46,9 +46,9 @@ class MapSelectionRenderer:
                 "difficulty": "Medium",
                 "description": "More special platforms. Skill and precision required!",
                 "config": {
-                    "gravity": 0.5,
+                    "gravity": 0.2,
                     "player_speed": 5,
-                    "jump_strength": 12,
+                    "jump_strength": 14,
                     "platform_density": 2.2,
                     "moving_platform_pct": 20,
                     "disappearing_platform_pct": 15,
@@ -63,7 +63,7 @@ class MapSelectionRenderer:
                 "config": {
                     "gravity": 0.4,
                     "player_speed": 6,
-                    "jump_strength": 8,
+                    "jump_strength": 14,
                     "platform_density": 2.5,
                     "moving_platform_pct": 25,
                     "disappearing_platform_pct": 20,
