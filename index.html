@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Jumping Ball Game Presentation</title>
+        <link rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+            integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
+            crossorigin="anonymous" referrerpolicy="no-referrer" />
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                background: #121212;
+                overflow-x: hidden;
+                min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                color: #fff;
+            }
+
+            .container {
+                position: relative;
+                width: 90%;
+                max-width: 1000px;
+                height: 80vh;
+                max-height: 600px;
+                background: #1e1e1e;
+                box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+                margin: 20px auto;
+                border-radius: 12px;
+                overflow: hidden;
+            }
+
+            .slide .item {
+                width: 200px;
+                height: 300px;
+                position: absolute;
+                top: 50%;
+                transform: translate(0, -50%);
+                border-radius: 20px;
+                box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+                background-position: center center;
+                background-size: cover;
+                display: inline-block;
+                transition: 0.5s;
+            }
+
+            .slide .item:nth-child(1) {
+                top: 0;
+                left: 0;
+                transform: translate(0, 0);
+                border-radius: 0;
+                width: 100%;
+                height: 100%;
+            }
+
+            .slide .item:nth-child(2) {
+                left: 90%;
+                filter: blur(3px);
+                opacity: 1;
+                z-index: 1;
+                top: 50%;
+                transform: translate(0, -50%);
+                width: 200px;
+                height: 300px;
+                border-radius: 20px;
+                transition: filter 0.3s;
+            }
+
+            .slide .item:nth-child(3) {
+                opacity: 0;
+                z-index: -1;
+            }
+            
+            .slide .item:nth-child(n + 4) {
+                left: calc(50% + 220px);
+                opacity: 0;
+            }
+
+            .item .content {
+                position: absolute;
+                top: 50%;
+                left: 10%;
+                width: 80%;
+                max-width: 500px;
+                text-align: left;
+                color: #fff;
+                transform: translate(0, -50%);
+                display: none;
+                text-shadow: 0px 0px 5px rgba(0, 0, 0, 0.8);
+            }
+
+            .item .content.dark-text {
+                color: #fff;
+                text-shadow: 0px 0px 5px rgba(0, 0, 0, 0.8);
+            }
+
+            .slide .item:nth-child(1) .content {
+                display: block;
+            }
+
+            .content .name {
+                font-size: 40px;
+                text-transform: uppercase;
+                font-weight: bold;
+                opacity: 0;
+                animation: animate 1s ease-in-out 1 forwards;
+                display: inline-block;
+                background-color: rgba(0, 0, 0, 0.6);
+                padding: 8px 15px;
+                border-radius: 8px;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+                margin-bottom: 10px;
+            }
+
+            .content .des {
+                margin-top: 10px;
+                margin-bottom: 20px;
+                opacity: 0;
+                animation: animate 1s ease-in-out 0.3s 1 forwards;
+                width: 100%;
+                overflow-wrap: break-word;
+                word-wrap: break-word;
+                hyphens: auto;
+                line-height: 1.4;
+                display: inline-block;
+                background-color: rgba(0, 0, 0, 0.6);
+                padding: 8px 15px;
+                border-radius: 8px;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            }
+
+            .content .code-snippet {
+                background-color: #2a2a2a;
+                color: #4CAF50;
+                font-family: monospace;
+                padding: 10px;
+                border-radius: 8px;
+                margin-top: 10px;
+                white-space: pre-wrap;
+                word-wrap: break-word;
+                font-size: 12px;
+                max-height: 200px;
+                overflow-y: auto;
+            }
+
+            .button {
+                width: 100%;
+                text-align: center;
+                position: absolute;
+                bottom: 20px;
+            }
+
+            .button button {
+                width: 40px;
+                height: 35px;
+                border-radius: 8px;
+                border: none;
+                cursor: pointer;
+                margin: 0 5px;
+                border: 1px solid #444;
+                background: #2a2a2a;
+                color: #fff;
+                transition: 0.3s;
+            }
+
+            .button button:hover {
+                background: #444;
+                color: #fff;
+            }
+
+            @keyframes animate {
+                from {
+                    opacity: 0;
+                    transform: translate(0, 100px);
+                    filter: blur(33px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translate(0);
+                    filter: blur(0);
+                }
+            }
+
+            @media screen and (max-width: 768px) {
+                .container {
+                    height: 70vh;
+                }
+                
+                .content .name {
+                    font-size: 28px;
+                }
+                
+                .content .des {
+                    font-size: 14px;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="slide">
+                <div class="item" style="background-image: url(docs/screenshots/game-play.png);">
+                    <div class="content dark-text">
+                        <div class="name">Jumping Ball Game</div>
+                        <div class="des">An innovative endless platformer where a ball automatically navigates through dynamically generated platforms. Experience a unique gameplay mechanic that challenges your reflexes and strategic thinking!</div>
+                    </div>
+                </div>
+                <div class="item" style="background-image: url(docs/screenshots/maps.png);">
+                    <div class="content">
+                        <div class="name">Procedural Platform Generation</div>
+                        <div class="des">Dynamic map creation that ensures each game is unique. Platforms are generated in real-time, creating an endless and unpredictable gameplay experience. The system intelligently spawns different platform types, including standard, moving, disappearing, and dangerous platforms.</div>
+                    </div>
+                </div>
+                <div class="item" style="background-image: url(docs/screenshots/custom-map-settings.png);">
+                    <div class="content dark-text">
+                        <div class="name">Dynamic Game Settings</div>
+                        <div class="des">Comprehensive game customization that allows players to fine-tune their experience. Adjust key parameters like gravity, player speed, jump strength, and platform generation. Difficulty scales dynamically, providing a progressively challenging gameplay that adapts to the player's performance.</div>
+                    </div>
+                </div>
+                <div class="item" style="background-image: url(docs/screenshots/how-to-play.png);">
+                    <div class="content dark-text">
+                        <div class="name">Automatic Jumping Mechanics</div>
+                        <div class="des">An innovative jumping system that automates player movement while maintaining strategic gameplay. The ball automatically jumps between platforms, calculating optimal trajectories based on physics principles. This unique mechanic creates a mesmerizing and challenging experience that tests the player's timing and spatial awareness.</div>
+                    </div>
+                </div>
+                <div class="item" style="background-image: url(docs/screenshots/menu.png);">
+                    <div class="content">
+                        <div class="name">Game Architecture</div>
+                        <div class="des">Built with Python and Pygame, featuring modular design with separate components for rendering, event handling, and game logic.</div>
+                    </div>
+                </div>
+                <div class="item" style="background-image: url(docs/screenshots/settings.png);">
+                    <div class="content">
+                        <div class="name">Customization</div>
+                        <div class="des">Highly configurable game with adjustable settings for platform generation, difficulty, and sound. Easily extendable architecture allows for future enhancements.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="button">
+                <button class="prev"><i class="fa-solid fa-arrow-left"></i></button>
+                <button class="next"><i class="fa-solid fa-arrow-right"></i></button>
+                <button class="reset"><i class="fa-solid fa-rotate-left"></i></button>
+            </div>
+        </div>
+        <script>
+            let next = document.querySelector('.next')
+            let prev = document.querySelector('.prev')
+            let reset = document.querySelector('.reset')
+            
+            let originalSlides = []
+            
+            document.addEventListener('DOMContentLoaded', function() {
+                originalSlides = Array.from(document.querySelectorAll('.item'))
+                
+                document.querySelectorAll('.item .content').forEach(content => {
+                    content.style.display = 'none';
+                });
+                document.querySelector('.item:nth-child(1) .content').style.display = 'block';
+            })
+
+            next.addEventListener('click', function(){
+                let items = document.querySelectorAll('.item')
+                document.querySelector('.slide').appendChild(items[0])
+                
+                document.querySelectorAll('.item .content').forEach(content => {
+                    content.style.display = 'none';
+                });
+                document.querySelector('.item:nth-child(1) .content').style.display = 'block';
+            })
+
+            prev.addEventListener('click', function(){
+                let items = document.querySelectorAll('.item')
+                document.querySelector('.slide').prepend(items[items.length - 1])
+                
+                document.querySelectorAll('.item .content').forEach(content => {
+                    content.style.display = 'none';
+                });
+                document.querySelector('.item:nth-child(1) .content').style.display = 'block';
+            })
+            
+            reset.addEventListener('click', function(){
+                let slide = document.querySelector('.slide')
+                
+                slide.innerHTML = ''
+                
+                originalSlides.forEach(function(item) {
+                    slide.appendChild(item.cloneNode(true))
+                })
+                
+                document.querySelectorAll('.item .content').forEach(content => {
+                    content.style.display = 'none';
+                });
+                document.querySelector('.item:nth-child(1) .content').style.display = 'block';
+            })
+        </script>
+    </body>
+</html>
