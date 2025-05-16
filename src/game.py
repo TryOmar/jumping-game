@@ -5,7 +5,7 @@ from src.game_state import GameState, StateManager
 from src.player import Player
 from src.map import Map
 from src.platform import Platform, MovingPlatform, DisappearingPlatform, DangerousPlatform
-from src.renderer import Renderer
+from src.renderers.base_renderer import BaseRenderer
 from src.event_handler import EventHandler
 from src.collision_handler import CollisionHandler
 
@@ -48,7 +48,7 @@ class Game:
         self.running = True
         
         # Initialize handlers
-        self.renderer = Renderer(self.screen)
+        self.renderer = BaseRenderer(self.screen)
         self.event_handler = EventHandler(self)
         self.collision_handler = CollisionHandler(self)
     
