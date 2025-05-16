@@ -1,42 +1,23 @@
 # Jumping Ball Game
 
 ## Overview
-A dynamic, endless jumping platformer game where players control a ball navigating through an ever-changing landscape of platforms.
+An endless platformer where a ball automatically jumps between dynamically generated platforms. Test your reflexes in this unique, minimalist arcade game.
 
-## 🎮 Game Features
+## 🖼️ Screenshots
 
-### Gameplay Mechanics
-- Endless scrolling platformer
-- Automatic jumping mechanism
-- Procedurally generated platforms
-- Dynamic difficulty progression
+| Menu | Gameplay | How to Play |
+|------|----------|-------------|
+| ![Menu](docs/screenshots/menu.png) | ![Gameplay](docs/screenshots/game-play.png) | ![How to Play](docs/screenshots/how-to-play.png) |
 
-### Platform Varieties
-- Standard platforms
-- Moving platforms
-- Disappearing platforms
-- Dangerous platforms
+| Custom Map Settings | Map Varieties | Settings |
+|---------------------|---------------|----------|
+| ![Custom Map Settings](docs/screenshots/custom-map-settings.png) | ![Maps](docs/screenshots/maps.png) | ![Settings](docs/screenshots/settings.png) |
 
-### Sound Design
-- Immersive background music
-- Sound effects for:
-  - Player jumps
-  - Platform interactions
-  - Game start/end events
-
-### User Interface
-- Intuitive main menu
-- Game over screen with score display
-- "Try Again" and "Main Menu" options
-
-## 🕹️ Controls
-- Automatic jumping
-- No direct player input required
-- Ball moves autonomously across platforms
-
-## 🏆 Scoring
-- Score increases with distance traveled
-- Challenges become progressively harder
+## 🎮 Features
+- Procedural platform generation
+- Automatic jumping mechanics
+- Dynamic difficulty scaling
+- Customizable game settings
 
 ## 📦 Installation
 
@@ -54,16 +35,6 @@ A dynamic, endless jumping platformer game where players control a ball navigati
 ```bash
 pyinstaller --onefile --windowed --add-data "assets;assets" main.py
 ```
-
-## 🖼️ Screenshots
-
-| Menu | Gameplay | How to Play |
-|------|----------|-------------|
-| ![Menu](docs/screenshots/menu.png) | ![Gameplay](docs/screenshots/game-play.png) | ![How to Play](docs/screenshots/how-to-play.png) |
-
-| Custom Map Settings | Map Varieties | Settings |
-|---------------------|---------------|----------|
-| ![Custom Map Settings](docs/screenshots/custom-map-settings.png) | ![Maps](docs/screenshots/maps.png) | ![Settings](docs/screenshots/settings.png) |
 
 ## 🛠️ Customization
 Adjust game parameters in `src/config/` files to modify:
