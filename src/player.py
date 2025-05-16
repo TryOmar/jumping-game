@@ -24,6 +24,9 @@ class Player:
         # Game reference (set after creation)
         self.game = None
         
+        # Landing sound flag
+        self.landing_sound_played = False
+        
     def set_game(self, game):
         """Set a reference to the game instance for sounds and other interactions"""
         self.game = game
@@ -47,6 +50,10 @@ class Player:
         # Auto-jump when on ground and cooldown is over
         if self.auto_jump_enabled and self.on_ground and self.auto_jump_cooldown <= 0:
             self.jump(auto=True)  # Pass auto=True to indicate this is from auto-jump
+        
+        # Reset landing sound flag if not on ground
+        if not self.on_ground:
+            self.landing_sound_played = False
         
         # Check if we've landed on a platform
         # This will be handled by the collision detection in the game
@@ -113,6 +120,10 @@ class Player:
         if keys[pygame.K_UP]:
             self.jump()
         
+    def reset_landing_sound(self):
+        """Reset the landing sound flag"""
+        self.landing_sound_played = False
+        
     def land(self, platform_world_y):
         """Called when player lands on a platform. platform_world_y is the top of the platform in world coordinates."""
         # Prevent player from going through the platform
@@ -120,6 +131,9 @@ class Player:
         self.vel_y = 0
         self.is_jumping = False
         self.on_ground = True
+        
+        # Reset landing sound flag when landing on a new platform
+        self.landing_sound_played = False
         
         # Return True if we need to trigger automatic bounce
         return True

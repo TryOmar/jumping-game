@@ -71,9 +71,6 @@ class CollisionHandler:
             self.game.player.bounce()
             # Play jump sound when player bounces
             self.game.sound_manager.play_game_sound("jump")
-        else:
-            # Play landing sound when player stops on a platform
-            self.game.sound_manager.play_game_sound("land")
         
         # Handle platform type specific effects
         if isinstance(platform, DangerousPlatform):
