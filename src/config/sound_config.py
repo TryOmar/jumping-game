@@ -6,6 +6,9 @@ This module centralizes all sound effect mappings and provides utilities for loa
 import os
 import pygame
 
+# Import resource_path from utility module
+from src.utils.path_utils import resource_path
+
 # Initialize pygame mixer if it hasn't been already
 if not pygame.mixer.get_init():
     pygame.mixer.init()
@@ -67,7 +70,8 @@ def load_sound(sound_name):
         return None
     
     try:
-        sound = pygame.mixer.Sound(sound_path)
+        sound_path = os.path.join(SOUND_BASE_PATH, SOUND_EFFECTS[sound_name]["file"])
+        sound = pygame.mixer.Sound(resource_path(sound_path))
         
         # Set the sound's volume based on its category and individual setting
         sound_config = SOUND_EFFECTS[sound_name]
