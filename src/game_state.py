@@ -4,11 +4,13 @@ class GameState(Enum):
     """Enum representing different game states"""
     MAIN_MENU = 0
     MAP_SELECT = 1
-    PLAYING = 2
-    PAUSED = 3
-    GAME_OVER = 4
-    SETTINGS = 5
-    HOW_TO_PLAY = 6
+    OFFICIAL_MAPS = 2
+    CUSTOM_MAPS = 3
+    PLAYING = 4
+    PAUSED = 5
+    GAME_OVER = 6
+    SETTINGS = 7
+    HOW_TO_PLAY = 8
     
 class StateManager:
     """Manages transitions between different game states"""
@@ -20,6 +22,8 @@ class StateManager:
         self.state_data = {
             GameState.MAIN_MENU: {},
             GameState.MAP_SELECT: {},
+            GameState.OFFICIAL_MAPS: {},
+            GameState.CUSTOM_MAPS: {},
             GameState.PLAYING: {
                 "score": 0,
                 "current_map": None,

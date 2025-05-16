@@ -24,6 +24,12 @@ class EventHandler:
                     elif self.game.state_manager.is_state(GameState.MAP_SELECT):
                         # Return to main menu when on map selection screen
                         self.game.state_manager.change_state(GameState.MAIN_MENU)
+                    elif self.game.state_manager.is_state(GameState.OFFICIAL_MAPS):
+                        # Return to map selection screen
+                        self.game.state_manager.change_state(GameState.MAP_SELECT)
+                    elif self.game.state_manager.is_state(GameState.CUSTOM_MAPS):
+                        # Return to map selection screen
+                        self.game.state_manager.change_state(GameState.MAP_SELECT)
                     else:
                         self.game.state_manager.return_to_previous()
                 
@@ -91,19 +97,29 @@ class EventHandler:
                     if hasattr(self.game, 'map_selection_buttons'):
                         if self.game.map_selection_buttons["official"].collidepoint(mouse_pos):
                             print("Official Maps selected")
-                            # For now, just show available maps or start Map 1
-                            # Later this could lead to a more detailed official maps screen
+                            # Navigate to the official maps screen
+                            self.game.state_manager.change_state(GameState.OFFICIAL_MAPS)
                             
                         elif self.game.map_selection_buttons["custom"].collidepoint(mouse_pos):
                             print("Custom Maps selected")
-                            # This would lead to custom map creation or selection
-                            # For now just show a message
-                            
-                        elif self.game.map_selection_buttons["map1"].collidepoint(mouse_pos):
-                            print("Map 1 selected")
-                            # Start the game with Map 1
-                            self.game.state_manager.change_state(GameState.PLAYING)
-                            self.game.init_game()
+                            # Navigate to the custom maps screen
+                            self.game.state_manager.change_state(GameState.CUSTOM_MAPS)
+            
+            # Handle mouse events for official maps screen
+            elif self.game.state_manager.is_state(GameState.OFFICIAL_MAPS):
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # Left click
+                    mouse_pos = pygame.mouse.get_pos()
+                    
+                    # Check if a map was clicked
+                    if hasattr(self.game, 'official_map_buttons'):
+                        for map_key, map_rect in self.game.official_map_buttons.items():
+                            if map_rect.collidepoint(mouse_pos):
+                                if map_key == "map1":
+                                    print("Map 1 selected")
+                                    # Start the game with Map 1
+                                    self.game.state_manager.change_state(GameState.PLAYING)
+                                    self.game.init_game()
+                                # Additional maps would be handled here
     
     def _handle_menu_selection(self):
         """Handle menu option selection"""

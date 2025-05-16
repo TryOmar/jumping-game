@@ -27,6 +27,11 @@ class BaseRenderer:
             menu_renderer.render_main_menu(game)
         elif game.state_manager.is_state(GameState.MAP_SELECT):
             menu_renderer.render_map_select(game)
+        elif game.state_manager.is_state(GameState.OFFICIAL_MAPS):
+            menu_renderer.render_official_maps(game)
+        elif game.state_manager.is_state(GameState.CUSTOM_MAPS):
+            # For now, this can be a placeholder that will be implemented later
+            ui_renderer.render_coming_soon("Custom Maps", "The custom maps feature is coming soon!")
         elif game.state_manager.is_state(GameState.PLAYING):
             gameplay_renderer.render_game(game)
         elif game.state_manager.is_state(GameState.PAUSED):

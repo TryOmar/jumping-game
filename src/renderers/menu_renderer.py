@@ -105,56 +105,6 @@ class MenuRenderer:
         self.screen.blit(custom_desc_text, (custom_rect.centerx - custom_desc_text.get_width()//2, 
                                          custom_rect.bottom + 10))
         
-        # Display available maps preview (will be expanded later)
-        preview_font = pygame.font.SysFont(None, 28)
-        preview_text = preview_font.render("Available Maps:", True, WHITE)
-        self.screen.blit(preview_text, (self.width//2 - preview_text.get_width()//2, 350))
-        
-        # Small map previews
-        map_preview_size = 100
-        preview_y = 400
-        
-        # Map 1 - Current working map
-        map1_rect = pygame.Rect(self.width//2 - 230, preview_y, map_preview_size, map_preview_size)
-        pygame.draw.rect(self.screen, GREEN, map1_rect)
-        pygame.draw.rect(self.screen, WHITE, map1_rect, 2)
-        map1_text = desc_font.render("Map 1", True, BLACK)
-        self.screen.blit(map1_text, (map1_rect.centerx - map1_text.get_width()//2, 
-                                   map1_rect.centery - map1_text.get_height()//2))
-        map1_status = desc_font.render("Available", True, WHITE)
-        self.screen.blit(map1_status, (map1_rect.centerx - map1_status.get_width()//2, 
-                                    map1_rect.bottom + 10))
-        
-        # Maps 2-4 - Coming Soon
-        coming_soon_maps = [
-            {"name": "Map 2", "x": self.width//2 - 80, "color": BLUE},
-            {"name": "Map 3", "x": self.width//2 + 70, "color": YELLOW},
-            {"name": "Map 4", "x": self.width//2 + 220, "color": RED}
-        ]
-        
-        for map_info in coming_soon_maps:
-            map_rect = pygame.Rect(map_info["x"], preview_y, map_preview_size, map_preview_size)
-            
-            # Semi-transparent gray overlay to indicate unavailability
-            pygame.draw.rect(self.screen, map_info["color"], map_rect)
-            
-            # Gray overlay
-            overlay = pygame.Surface((map_preview_size, map_preview_size), pygame.SRCALPHA)
-            overlay.fill((100, 100, 100, 150))  # Semi-transparent gray
-            self.screen.blit(overlay, map_rect)
-            
-            pygame.draw.rect(self.screen, WHITE, map_rect, 2)
-            
-            # Map name
-            map_text = desc_font.render(map_info["name"], True, WHITE)
-            self.screen.blit(map_text, (map_rect.centerx - map_text.get_width()//2, 
-                                     map_rect.centery - map_text.get_height()//2))
-            
-            # Coming soon text
-            soon_text = desc_font.render("Coming Soon", True, (255, 200, 0))
-            self.screen.blit(soon_text, (map_rect.centerx - soon_text.get_width()//2, 
-                                      map_rect.bottom + 10))
-        
         # Instructions
         instruction_font = pygame.font.SysFont(None, 24)
         instruction_text = instruction_font.render("Click on a map type to select, or press ESC to return", True, WHITE)
@@ -163,6 +113,97 @@ class MenuRenderer:
         # Store button rectangles in the game object for click detection
         game.map_selection_buttons = {
             "official": official_rect,
-            "custom": custom_rect,
-            "map1": map1_rect
-        } 
+            "custom": custom_rect
+        }
+    
+    def render_official_maps(self, game):
+        """Render the official maps selection screen"""
+        # Background
+        background_color = (60, 110, 160)  # Slightly different blue
+        self.screen.fill(background_color)
+        
+        # Draw header
+        header_font = pygame.font.SysFont(None, 56)
+        header_text = header_font.render("OFFICIAL MAPS", True, WHITE)
+        self.screen.blit(header_text, (self.width//2 - header_text.get_width()//2, 80))
+        
+        # Small map previews
+        map_preview_size = 120
+        preview_y = 180
+        map_spacing = 40
+        
+        # Available maps
+        maps = [
+            {"name": "Map 1", "x": self.width//2 - 230, "color": GREEN, "status": "Available", "key": "map1"},
+            {"name": "Map 2", "x": self.width//2 - 80, "color": BLUE, "status": "Coming Soon"},
+            {"name": "Map 3", "x": self.width//2 + 70, "color": YELLOW, "status": "Coming Soon"},
+            {"name": "Map 4", "x": self.width//2 + 220, "color": RED, "status": "Coming Soon"}
+        ]
+        
+        # Store button rectangles
+        map_buttons = {}
+        
+        desc_font = pygame.font.SysFont(None, 24)
+        
+        for map_info in maps:
+            map_rect = pygame.Rect(map_info["x"], preview_y, map_preview_size, map_preview_size)
+            
+            # Draw map preview
+            pygame.draw.rect(self.screen, map_info["color"], map_rect)
+            
+            # Add gray overlay for unavailable maps
+            if map_info["status"] == "Coming Soon":
+                overlay = pygame.Surface((map_preview_size, map_preview_size), pygame.SRCALPHA)
+                overlay.fill((100, 100, 100, 150))  # Semi-transparent gray
+                self.screen.blit(overlay, map_rect)
+            
+            pygame.draw.rect(self.screen, WHITE, map_rect, 2)
+            
+            # Map name
+            map_text = desc_font.render(map_info["name"], True, WHITE)
+            self.screen.blit(map_text, (map_rect.centerx - map_text.get_width()//2, 
+                                     map_rect.centery - map_text.get_height()//2))
+            
+            # Map status
+            status_text = desc_font.render(map_info["status"], True, 
+                                        (255, 255, 255) if map_info["status"] == "Available" else (255, 200, 0))
+            self.screen.blit(status_text, (map_rect.centerx - status_text.get_width()//2, 
+                                        map_rect.bottom + 10))
+            
+            # Store rect for available maps
+            if map_info["status"] == "Available" and "key" in map_info:
+                map_buttons[map_info["key"]] = map_rect
+        
+        # Map descriptions
+        description_y = preview_y + map_preview_size + 60
+        
+        # Descriptions for each map
+        descriptions = [
+            "Basic level with standard platforms. Perfect for beginners!",
+            "Faster platforms and moving obstacles. Test your reflexes!",
+            "Challenging level with disappearing platforms. Timing is key!",
+            "Ultimate challenge with all platform types and obstacles!"
+        ]
+        
+        # Display description for selected map (or first map by default)
+        selected_map = 0  # Default to the first map
+        
+        desc_text = descriptions[selected_map]
+        desc_rendered = desc_font.render(desc_text, True, WHITE)
+        self.screen.blit(desc_rendered, (self.width//2 - desc_rendered.get_width()//2, description_y))
+        
+        # Additional info for selected map
+        info_y = description_y + 40
+        
+        # Add level info
+        difficulty_labels = ["Easy", "Medium", "Hard", "Expert"]
+        difficulty_text = desc_font.render(f"Difficulty: {difficulty_labels[selected_map]}", True, WHITE)
+        self.screen.blit(difficulty_text, (self.width//2 - difficulty_text.get_width()//2, info_y))
+        
+        # Instructions
+        instruction_font = pygame.font.SysFont(None, 24)
+        instruction_text = instruction_font.render("Click on a map to select, or press ESC to return", True, WHITE)
+        self.screen.blit(instruction_text, (self.width//2 - instruction_text.get_width()//2, self.height - 40))
+        
+        # Store button rectangles in the game object for click detection
+        game.official_map_buttons = map_buttons 

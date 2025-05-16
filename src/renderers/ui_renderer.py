@@ -149,4 +149,37 @@ class UIRenderer:
         
         # Page indicator (if we want to add more pages later)
         page_text = pygame.font.SysFont(None, 20).render("Page 1/1", True, (100, 100, 100))
-        self.screen.blit(page_text, (self.width - 60, self.height - 30)) 
+        self.screen.blit(page_text, (self.width - 60, self.height - 30))
+    
+    def render_coming_soon(self, title, message):
+        """Render a coming soon screen with title and message"""
+        # Background
+        background_color = (50, 70, 120)  # Darker blue
+        self.screen.fill(background_color)
+        
+        # Draw header
+        header_font = pygame.font.SysFont(None, 64)
+        header_text = header_font.render(title, True, WHITE)
+        self.screen.blit(header_text, (self.width//2 - header_text.get_width()//2, 150))
+        
+        # Draw coming soon message
+        message_font = pygame.font.SysFont(None, 36)
+        message_text = message_font.render(message, True, (255, 220, 100))
+        self.screen.blit(message_text, (self.width//2 - message_text.get_width()//2, 250))
+        
+        # Draw decorative elements
+        pygame.draw.rect(self.screen, (80, 100, 150), (self.width//2 - 150, 320, 300, 5))
+        
+        # Draw instruction
+        instruction_font = pygame.font.SysFont(None, 24)
+        instruction_text = instruction_font.render("Press ESC to return", True, WHITE)
+        self.screen.blit(instruction_text, (self.width//2 - instruction_text.get_width()//2, 400))
+        
+        # Draw animated construction icon or similar
+        current_time = pygame.time.get_ticks()
+        animation_frame = (current_time // 500) % 3  # Simple 3-frame animation
+        
+        # Draw some animated element based on the frame
+        for i in range(3):
+            color = YELLOW if i == animation_frame else (100, 100, 100)
+            pygame.draw.rect(self.screen, color, (self.width//2 - 40 + i*30, 350, 20, 20)) 

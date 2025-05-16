@@ -41,6 +41,7 @@
 - [x] Create main menu screen
 - [x] Implement map selection menu
 - [x] Add "How to Play" instructions screen
+- [x] Improve map selection navigation flow
 - [ ] Design and implement in-game HUD:
   - [ ] Score counter
   - [ ] Floating object hit counters
