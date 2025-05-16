@@ -52,9 +52,10 @@
   - [ ] Jump counters on platforms
 
 ## ⚙️ Settings
-- [ ] Implement global settings menu
-- [ ] Add sound toggle options
-- [ ] Add music toggle options
+- [x] Implement global settings menu
+- [x] Add sound toggle options
+- [x] Add music toggle options
+- [x] Create resolution and fullscreen options
 - [ ] Create control remapping functionality
 - [ ] Implement per-map settings screens
 
@@ -66,7 +67,7 @@
   - [ ] Game over sound
   - [ ] Reward sound
 - [ ] Implement background music
-- [ ] Create audio manager for toggling sounds/music
+- [x] Create audio manager for toggling sounds/music
 
 ## 🧪 Testing and Polishing
 - [ ] Test all game mechanics

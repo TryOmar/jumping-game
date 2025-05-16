@@ -5,7 +5,8 @@ WINDOW = {
     "width": 800,
     "height": 600,
     "fps": 60,
-    "title": "Jumping Ball Game"
+    "title": "Jumping Ball Game",
+    "fullscreen": False
 }
 
 # Colors

@@ -9,6 +9,15 @@ class BaseRenderer:
         self.height = screen.get_height()
         
         # Initialize all renderers
+        self.init_renderers()
+    
+    def init_renderers(self):
+        """Initialize or reinitialize all renderers"""
+        # Update width and height
+        self.width = self.screen.get_width()
+        self.height = self.screen.get_height()
+        
+        # Import renderers
         from src.renderers.main_menu_renderer import MainMenuRenderer
         from src.renderers.map_selection_renderer import MapSelectionRenderer
         from src.renderers.gameplay_renderer import GameplayRenderer
@@ -16,12 +25,13 @@ class BaseRenderer:
         from src.renderers.settings_renderer import SettingsRenderer
         from src.renderers.how_to_play_renderer import HowToPlayRenderer
         
-        self.main_menu_renderer = MainMenuRenderer(screen)
-        self.map_selection_renderer = MapSelectionRenderer(screen)
-        self.gameplay_renderer = GameplayRenderer(screen)
-        self.game_over_renderer = GameOverRenderer(screen)
-        self.settings_renderer = SettingsRenderer(screen)
-        self.how_to_play_renderer = HowToPlayRenderer(screen)
+        # Initialize all renderers with the current screen
+        self.main_menu_renderer = MainMenuRenderer(self.screen)
+        self.map_selection_renderer = MapSelectionRenderer(self.screen)
+        self.gameplay_renderer = GameplayRenderer(self.screen)
+        self.game_over_renderer = GameOverRenderer(self.screen)
+        self.settings_renderer = SettingsRenderer(self.screen)
+        self.how_to_play_renderer = HowToPlayRenderer(self.screen)
     
     def render(self, game):
         """Draw everything to the screen"""

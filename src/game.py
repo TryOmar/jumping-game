@@ -8,16 +8,22 @@ from src.platform import Platform, MovingPlatform, DisappearingPlatform, Dangero
 from src.renderers.base_renderer import BaseRenderer
 from src.event_handler import EventHandler
 from src.collision_handler import CollisionHandler
+from src.config.settings import get_setting, update_setting
 
 class Game:
     def __init__(self, width=800, height=600, fps=60):
+        # Initialize pygame mixer for sound
+        pygame.mixer.init()
+        
         # Game window settings
         self.width = width
         self.height = height
         self.fps = fps
         
         # Setup game window
-        self.screen = pygame.display.set_mode((self.width, self.height))
+        fullscreen = get_setting('WINDOW', 'fullscreen', False)
+        flags = pygame.FULLSCREEN if fullscreen else 0
+        self.screen = pygame.display.set_mode((self.width, self.height), flags)
         pygame.display.set_caption("Jumping Ball Game")
         self.clock = pygame.time.Clock()
         
@@ -28,6 +34,9 @@ class Game:
         self.player = None
         self.current_map = None
         self.camera_y = 0
+        
+        # Audio settings
+        self.setup_audio()
         
         # Debug mode
         self.debug_mode = False
@@ -55,6 +64,19 @@ class Game:
         self.renderer = BaseRenderer(self.screen)
         self.event_handler = EventHandler(self)
         self.collision_handler = CollisionHandler(self)
+    
+    def setup_audio(self):
+        """Setup audio system with current settings"""
+        # Get volume settings
+        master_volume = get_setting('AUDIO', 'master_volume', 1.0)
+        sfx_volume = get_setting('AUDIO', 'sfx_volume', 1.0)
+        music_volume = get_setting('AUDIO', 'music_volume', 0.7)
+        
+        # Set global volumes
+        pygame.mixer.music.set_volume(music_volume * master_volume)
+        
+        # Store sounds dictionary (to be filled when sounds are loaded)
+        self.sounds = {}
         
     def handle_events(self):
         """Process all game events using the event handler"""
@@ -166,6 +188,20 @@ class Game:
     def render(self):
         """Draw everything to the screen using the renderer"""
         self.renderer.render(self)
+    
+    def apply_audio_settings(self):
+        """Apply current audio settings"""
+        # Get volume settings
+        master_volume = get_setting('AUDIO', 'master_volume', 1.0)
+        sfx_volume = get_setting('AUDIO', 'sfx_volume', 1.0)
+        music_volume = get_setting('AUDIO', 'music_volume', 0.7)
+        
+        # Apply music volume
+        pygame.mixer.music.set_volume(music_volume * master_volume)
+        
+        # Apply sfx volume to all sounds
+        for sound in self.sounds.values():
+            sound.set_volume(sfx_volume * master_volume)
     
     def run(self):
         """Main game loop"""

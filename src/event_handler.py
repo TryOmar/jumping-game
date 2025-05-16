@@ -31,6 +31,12 @@ class EventHandler:
                     elif self.game.state_manager.is_state(GameState.CUSTOM_MAPS):
                         # Return to map selection screen
                         self.game.state_manager.change_state(GameState.MAP_SELECT)
+                    elif self.game.state_manager.is_state(GameState.SETTINGS):
+                        # When exiting settings, apply any changes
+                        if hasattr(self.game.renderer, 'settings_renderer'):
+                            settings = self.game.renderer.settings_renderer.apply_settings()
+                            self._apply_display_settings(settings)
+                        self.game.state_manager.return_to_previous()
                     else:
                         self.game.state_manager.return_to_previous()
                 
@@ -194,6 +200,26 @@ class EventHandler:
                                 self.game.game_over_selected_option = i
                                 self._handle_game_over_selection()
                                 break
+            
+            # Handle settings screen interactions
+            elif self.game.state_manager.is_state(GameState.SETTINGS):
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # Left click
+                    mouse_pos = pygame.mouse.get_pos()
+                    # Check if settings renderer exists
+                    if hasattr(self.game.renderer, 'settings_renderer'):
+                        # Forward mouse click to settings renderer
+                        self.game.renderer.settings_renderer.handle_mouse_click(mouse_pos)
+                
+                if event.type == pygame.MOUSEMOTION and hasattr(self.game.renderer, 'settings_renderer'):
+                    # Check if a slider is being dragged
+                    if self.game.renderer.settings_renderer.active_slider:
+                        # Update slider value
+                        self.game.renderer.settings_renderer.update_slider_value(event.pos)
+                
+                if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+                    # Handle mouse release for sliders
+                    if hasattr(self.game.renderer, 'settings_renderer'):
+                        self.game.renderer.settings_renderer.handle_mouse_release()
     
     def _update_slider_value(self, slider_key, mouse_x):
         """Update slider value based on mouse position"""
@@ -259,4 +285,35 @@ class EventHandler:
             self.game.init_game()
         elif self.game.game_over_selected_option == 1:  # Main Menu
             print("Return to Main Menu selected")
-            self.game.state_manager.change_state(GameState.MAIN_MENU) 
+            self.game.state_manager.change_state(GameState.MAIN_MENU)
+
+    def _apply_display_settings(self, settings):
+        """Apply display settings changes"""
+        if not settings:
+            return
+            
+        # Get settings that need to be applied
+        resolution = settings.get('resolution')
+        fullscreen = settings.get('fullscreen')
+        
+        # Check if we need to change resolution
+        current_w = self.game.screen.get_width()
+        current_h = self.game.screen.get_height()
+        
+        # Check if we need to change fullscreen state
+        current_fullscreen = (pygame.display.get_surface().get_flags() & pygame.FULLSCREEN) != 0
+        
+        # Only update if something changed
+        if (resolution and (resolution[0] != current_w or resolution[1] != current_h)) or (fullscreen != current_fullscreen):
+            flags = pygame.FULLSCREEN if fullscreen else 0
+            self.game.screen = pygame.display.set_mode(resolution, flags)
+            
+            # Update width and height properties
+            self.game.width = resolution[0]
+            self.game.height = resolution[1]
+            
+            # Update renderer screen references
+            self.game.renderer.screen = self.game.screen
+            
+            # Reinitialize renderers that need the screen dimensions
+            self.game.renderer.init_renderers() 
