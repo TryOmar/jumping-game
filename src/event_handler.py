@@ -57,6 +57,15 @@ class EventHandler:
                     elif event.key == pygame.K_RETURN:
                         self._handle_menu_selection()
                 
+                # Game over screen controls
+                elif self.game.state_manager.is_state(GameState.GAME_OVER):
+                    if event.key == pygame.K_UP:
+                        self.game.game_over_selected_option = max(0, self.game.game_over_selected_option - 1)
+                    elif event.key == pygame.K_DOWN:
+                        self.game.game_over_selected_option = min(1, self.game.game_over_selected_option + 1)
+                    elif event.key == pygame.K_RETURN:
+                        self._handle_game_over_selection()
+                
                 # Temporary state change keys for testing
                 if event.key == pygame.K_1:
                     self.game.state_manager.change_state(GameState.MAIN_MENU)
@@ -120,6 +129,27 @@ class EventHandler:
                                     self.game.state_manager.change_state(GameState.PLAYING)
                                     self.game.init_game()
                                 # Additional maps would be handled here
+            
+            # Handle mouse events for game over screen
+            elif self.game.state_manager.is_state(GameState.GAME_OVER):
+                if event.type == pygame.MOUSEMOTION:
+                    # Check if mouse is over any option
+                    mouse_pos = pygame.mouse.get_pos()
+                    if hasattr(self.game, 'game_over_buttons'):
+                        for i, button_rect in enumerate(self.game.game_over_buttons):
+                            if button_rect.collidepoint(mouse_pos):
+                                self.game.game_over_selected_option = i
+                                break
+                
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # Left click
+                    # Check if clicking on an option
+                    mouse_pos = pygame.mouse.get_pos()
+                    if hasattr(self.game, 'game_over_buttons'):
+                        for i, button_rect in enumerate(self.game.game_over_buttons):
+                            if button_rect.collidepoint(mouse_pos):
+                                self.game.game_over_selected_option = i
+                                self._handle_game_over_selection()
+                                break
     
     def _handle_menu_selection(self):
         """Handle menu option selection"""
@@ -143,4 +173,16 @@ class EventHandler:
         option_width = len(self.game.menu_options[index]) * 20
         option_x = self.game.width // 2 - option_width // 2
         
-        return pygame.Rect(option_x, option_y, option_width, option_height) 
+        return pygame.Rect(option_x, option_y, option_width, option_height)
+
+    # Add this new method to handle game over option selection
+    def _handle_game_over_selection(self):
+        """Handle game over option selection"""
+        if self.game.game_over_selected_option == 0:  # Try Again
+            print("Try Again selected")
+            # Restart the game with same map
+            self.game.state_manager.change_state(GameState.PLAYING)
+            self.game.init_game()
+        elif self.game.game_over_selected_option == 1:  # Main Menu
+            print("Return to Main Menu selected")
+            self.game.state_manager.change_state(GameState.MAIN_MENU) 

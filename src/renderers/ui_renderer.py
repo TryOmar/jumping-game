@@ -1,3 +1,13 @@
+"""
+DEPRECATED - This file is kept for backward compatibility but is no longer used.
+The functionality has been split into separate specialized renderer classes:
+- game_over_renderer.py
+- settings_renderer.py
+- how_to_play_renderer.py
+
+This file will be removed in a future update.
+"""
+
 import pygame
 from src.constants import WHITE, BLACK, GREEN, BLUE, YELLOW, RED
 

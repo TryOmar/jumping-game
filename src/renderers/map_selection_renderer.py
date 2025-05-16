@@ -1,72 +1,13 @@
-"""
-DEPRECATED - This file is kept for backward compatibility but is no longer used.
-The functionality has been split into separate specialized renderer classes:
-- main_menu_renderer.py
-- map_selection_renderer.py
-
-This file will be removed in a future update.
-"""
-
 import pygame
 from src.constants import WHITE, BLACK, GREEN, BLUE, YELLOW, RED
 
-class MenuRenderer:
+class MapSelectionRenderer:
     def __init__(self, screen):
         self.screen = screen
         self.width = screen.get_width()
         self.height = screen.get_height()
     
-    def render_main_menu(self, game):
-        """Render the main menu screen"""
-        # Draw background
-        background_color = (50, 100, 150)  # Nice blue background
-        self.screen.fill(background_color)
-        
-        # Draw game title
-        title_font = pygame.font.SysFont(None, 72)
-        title_text = title_font.render("JUMPING BALL", True, WHITE)
-        self.screen.blit(title_text, (self.width//2 - title_text.get_width()//2, 100))
-        
-        # Draw decorative circles
-        pygame.draw.circle(self.screen, BLACK, (self.width//2, 200), 30)
-        pygame.draw.circle(self.screen, (200, 200, 0), (self.width//2 - 80, 220), 15)
-        pygame.draw.circle(self.screen, (0, 200, 200), (self.width//2 + 80, 220), 15)
-        
-        # Draw menu options
-        option_height = 40
-        start_y = self.height // 2
-        
-        for i, option in enumerate(game.menu_options):
-            # Determine if this option is selected
-            is_selected = (i == game.selected_option)
-            
-            # Choose font color based on selection
-            color = BLACK if not is_selected else (255, 0, 0)
-            
-            # Create option text
-            option_font = pygame.font.SysFont(None, 36)
-            option_text = option_font.render(option, True, color)
-            
-            # Draw option text
-            option_y = start_y + i * option_height
-            option_x = self.width//2 - option_text.get_width()//2
-            self.screen.blit(option_text, (option_x, option_y))
-            
-            # Draw indicator if selected
-            if is_selected:
-                # Draw arrow or highlight
-                pygame.draw.polygon(self.screen, (255, 0, 0), [
-                    (option_x - 20, option_y + option_text.get_height()//2),
-                    (option_x - 10, option_y + option_text.get_height()//2 - 5),
-                    (option_x - 10, option_y + option_text.get_height()//2 + 5),
-                ])
-        
-        # Draw footer text
-        footer_font = pygame.font.SysFont(None, 20)
-        footer_text = footer_font.render("Use arrow keys to select, Enter to confirm", True, WHITE)
-        self.screen.blit(footer_text, (self.width//2 - footer_text.get_width()//2, self.height - 50))
-    
-    def render_map_select(self, game):
+    def render_map_type_selection(self, game):
         """Render the map selection screen with Official and Custom map options"""
         # Background
         background_color = (70, 120, 170)  # Slightly different blue from main menu
@@ -215,4 +156,37 @@ class MenuRenderer:
         self.screen.blit(instruction_text, (self.width//2 - instruction_text.get_width()//2, self.height - 40))
         
         # Store button rectangles in the game object for click detection
-        game.official_map_buttons = map_buttons 
+        game.official_map_buttons = map_buttons
+        
+    def render_custom_maps(self, game):
+        """Render the custom maps coming soon screen"""
+        # Background
+        background_color = (50, 70, 120)  # Darker blue
+        self.screen.fill(background_color)
+        
+        # Draw header
+        header_font = pygame.font.SysFont(None, 64)
+        header_text = header_font.render("CUSTOM MAPS", True, WHITE)
+        self.screen.blit(header_text, (self.width//2 - header_text.get_width()//2, 150))
+        
+        # Draw coming soon message
+        message_font = pygame.font.SysFont(None, 36)
+        message_text = message_font.render("The custom maps feature is coming soon!", True, (255, 220, 100))
+        self.screen.blit(message_text, (self.width//2 - message_text.get_width()//2, 250))
+        
+        # Draw decorative elements
+        pygame.draw.rect(self.screen, (80, 100, 150), (self.width//2 - 150, 320, 300, 5))
+        
+        # Draw instruction
+        instruction_font = pygame.font.SysFont(None, 24)
+        instruction_text = instruction_font.render("Press ESC to return", True, WHITE)
+        self.screen.blit(instruction_text, (self.width//2 - instruction_text.get_width()//2, 400))
+        
+        # Draw animated construction icon or similar
+        current_time = pygame.time.get_ticks()
+        animation_frame = (current_time // 500) % 3  # Simple 3-frame animation
+        
+        # Draw some animated element based on the frame
+        for i in range(3):
+            color = YELLOW if i == animation_frame else (100, 100, 100)
+            pygame.draw.rect(self.screen, color, (self.width//2 - 40 + i*30, 350, 20, 20)) 

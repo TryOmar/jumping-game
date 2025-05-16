@@ -7,42 +7,47 @@ class BaseRenderer:
         self.screen = screen
         self.width = screen.get_width()
         self.height = screen.get_height()
+        
+        # Initialize all renderers
+        from src.renderers.main_menu_renderer import MainMenuRenderer
+        from src.renderers.map_selection_renderer import MapSelectionRenderer
+        from src.renderers.gameplay_renderer import GameplayRenderer
+        from src.renderers.game_over_renderer import GameOverRenderer
+        from src.renderers.settings_renderer import SettingsRenderer
+        from src.renderers.how_to_play_renderer import HowToPlayRenderer
+        
+        self.main_menu_renderer = MainMenuRenderer(screen)
+        self.map_selection_renderer = MapSelectionRenderer(screen)
+        self.gameplay_renderer = GameplayRenderer(screen)
+        self.game_over_renderer = GameOverRenderer(screen)
+        self.settings_renderer = SettingsRenderer(screen)
+        self.how_to_play_renderer = HowToPlayRenderer(screen)
     
     def render(self, game):
         """Draw everything to the screen"""
         # Clear the screen
         self.screen.fill(WHITE)
         
-        # Delegate rendering to specialized renderers based on game state
-        from src.renderers.menu_renderer import MenuRenderer
-        from src.renderers.gameplay_renderer import GameplayRenderer
-        from src.renderers.ui_renderer import UIRenderer
-        
-        menu_renderer = MenuRenderer(self.screen)
-        gameplay_renderer = GameplayRenderer(self.screen)
-        ui_renderer = UIRenderer(self.screen)
-        
         # Render based on game state
         if game.state_manager.is_state(GameState.MAIN_MENU):
-            menu_renderer.render_main_menu(game)
+            self.main_menu_renderer.render(game)
         elif game.state_manager.is_state(GameState.MAP_SELECT):
-            menu_renderer.render_map_select(game)
+            self.map_selection_renderer.render_map_type_selection(game)
         elif game.state_manager.is_state(GameState.OFFICIAL_MAPS):
-            menu_renderer.render_official_maps(game)
+            self.map_selection_renderer.render_official_maps(game)
         elif game.state_manager.is_state(GameState.CUSTOM_MAPS):
-            # For now, this can be a placeholder that will be implemented later
-            ui_renderer.render_coming_soon("Custom Maps", "The custom maps feature is coming soon!")
+            self.map_selection_renderer.render_custom_maps(game)
         elif game.state_manager.is_state(GameState.PLAYING):
-            gameplay_renderer.render_game(game)
+            self.gameplay_renderer.render_game(game)
         elif game.state_manager.is_state(GameState.PAUSED):
-            gameplay_renderer.render_game(game)  # Render game in background
-            gameplay_renderer.render_pause_menu(game)
+            self.gameplay_renderer.render_game(game)  # Render game in background
+            self.gameplay_renderer.render_pause_menu(game)
         elif game.state_manager.is_state(GameState.GAME_OVER):
-            ui_renderer.render_game_over(game)
+            self.game_over_renderer.render(game)
         elif game.state_manager.is_state(GameState.SETTINGS):
-            ui_renderer.render_settings(game)
+            self.settings_renderer.render(game)
         elif game.state_manager.is_state(GameState.HOW_TO_PLAY):
-            ui_renderer.render_how_to_play(game)
+            self.how_to_play_renderer.render(game)
         
         # Update the display
         pygame.display.flip() 

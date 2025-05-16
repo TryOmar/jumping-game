@@ -42,11 +42,12 @@
 - [x] Implement map selection menu
 - [x] Add "How to Play" instructions screen
 - [x] Improve map selection navigation flow
+- [x] Create UI style guide and constants
 - [ ] Design and implement in-game HUD:
   - [ ] Score counter
   - [ ] Floating object hit counters
   - [ ] Jump counters on platforms
-- [ ] Create game over screen
+- [x] Create game over screen
 
 ## ⚙️ Settings
 - [ ] Implement global settings menu
@@ -72,6 +73,7 @@
 - [x] Optimize performance
 - [x] Refactor code for maintainability
 - [x] Implement configuration system (settings.py)
+- [x] Restructure renderers to match game screens
 - [ ] Add final polish and refinements
 
 ## 🏁 Final Steps

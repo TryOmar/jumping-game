@@ -44,6 +44,10 @@ class Game:
         self.menu_options = ["Play", "How to Play", "Settings", "Exit"]
         self.selected_option = 0
         
+        # Game over options
+        self.game_over_selected_option = 0
+        self.game_over_buttons = []
+        
         # Game state
         self.running = True
         
@@ -51,7 +55,7 @@ class Game:
         self.renderer = BaseRenderer(self.screen)
         self.event_handler = EventHandler(self)
         self.collision_handler = CollisionHandler(self)
-    
+        
     def handle_events(self):
         """Process all game events using the event handler"""
         self.event_handler.handle_events()
@@ -135,4 +139,4 @@ class Game:
         
         # Clean up
         pygame.quit()
-        sys.exit() 
+        sys.exit()
