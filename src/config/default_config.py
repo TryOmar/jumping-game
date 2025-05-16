@@ -72,7 +72,7 @@ MAP = {
     "target_height": -5000,  # Negative because we're going up
     "theme_color": (0, 150, 0),
     "platform_speed": 2,
-    "platform_count_per_generation": 10
+    "platform_count_per_generation": 5
 }
 
 # Debug settings

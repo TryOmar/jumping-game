@@ -18,7 +18,7 @@ class MapSelectionRenderer:
                 "config": {
                     "gravity": 0.7,
                     "player_speed": 3,
-                    "jump_strength": 15,
+                    "jump_strength": 18,
                     "platform_density": 1.5,
                     "moving_platform_pct": 10,
                     "disappearing_platform_pct": 5,

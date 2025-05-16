@@ -5,7 +5,8 @@ from src.constants import SCREEN_WIDTH, SCREEN_HEIGHT, PLATFORM_COUNT, WHITE, BL
 
 class Map:
     def __init__(self, theme_color=(0, 150, 0), gravity=0.5, platform_speed=2, platform_density=2.0, 
-                 moving_platform_pct=25, disappearing_platform_pct=15, dangerous_platform_pct=10):
+                 moving_platform_pct=25, disappearing_platform_pct=15, dangerous_platform_pct=10, 
+                 platform_count_per_generation=10):
         self.platforms = []
         self.theme_color = theme_color
         self.gravity = gravity
@@ -19,6 +20,7 @@ class Map:
         self.moving_platform_pct = moving_platform_pct / 100.0  # Convert to decimal
         self.disappearing_platform_pct = disappearing_platform_pct / 100.0
         self.dangerous_platform_pct = dangerous_platform_pct / 100.0
+        self.platforms_to_generate = platform_count_per_generation
         
         # Calculate regular platform percentage based on others
         total_special = self.moving_platform_pct + self.disappearing_platform_pct + self.dangerous_platform_pct
@@ -80,16 +82,15 @@ class Map:
             platform.update(camera_y)
             
         # Remove platforms that are below the bottom of the screen with a margin
-        # Only remove platforms that are definitely off-screen
         self.platforms = [p for p in self.platforms if p.y < self.game.height - camera_y + 200]
         
         # Find the highest platform
         if self.platforms:
             highest_y = min([p.y for p in self.platforms])
-            # Always maintain platforms within the visible range and above
-            # Ensure there are platforms being generated before they're needed
+            # Only generate more platforms if the highest platform is within a buffer above the visible area
             screen_top = camera_y
-            if highest_y > screen_top - self.game.height:
+            PLATFORM_GENERATION_BUFFER = 200  # Only generate if close to top
+            if highest_y > screen_top - PLATFORM_GENERATION_BUFFER:
                 self.generate_more_platforms(camera_y)
     
     def _create_platform_by_type(self, x, y, width=PLATFORM_WIDTH):
@@ -123,51 +124,52 @@ class Map:
         """Generate additional platforms as the player moves up"""
         # Find the highest platform
         highest_y = min([p.y for p in self.platforms]) if self.platforms else self.game.height
-        
-        # Calculate vertical gap based on platform density
-        base_gap = 70  # Default gap
-        vertical_gap = int(base_gap / self.platform_density)
-        vertical_gap = max(40, min(100, vertical_gap))  # Constrain between 40-100
-        
-        # Generate more platforms with density-adjusted spacing
-        platform_count = 10  # Generate more platforms at once for better coverage
-        
-        # Debug print
-        if self.debug_mode:
-            print(f"Generating new platforms. Camera Y: {camera_y}, Highest platform Y: {highest_y}")
-        
-        # Start generating platforms upwards from just above the highest platform
-        current_y = highest_y - vertical_gap
-        
+
+        # Use a fixed vertical gap for consistency
+        vertical_gap = 70  # Or whatever value you prefer
+
+        platform_count = self.platforms_to_generate if hasattr(self, 'platforms_to_generate') else 10
+
         for i in range(platform_count):
-            # Position each new platform above the highest one with configured gap
-            # Make sure platforms are generated in a good pattern for gameplay
-            # Alternate between left, center, and right sections of the screen
-            section = i % 3  # 0, 1, or 2
-            
-            y = current_y
-            
-            if section == 0:  # Left section
+            # Each new platform is placed above the previous highest
+            y = highest_y - (i + 1) * vertical_gap
+
+            # Alternate between left, center, and right sections
+            section = i % 3
+            if section == 0:
                 x = random.randint(50, self.game.width // 3 - 50)
-            elif section == 1:  # Center section
+            elif section == 1:
                 x = random.randint(self.game.width // 3 + 50, 2 * self.game.width // 3 - 50)
-            else:  # Right section
+            else:
                 x = random.randint(2 * self.game.width // 3 + 50, self.game.width - 150)
-            
-            # Create platform with consistent width
-            platform_width = random.randint(80, 120)  # Vary width slightly
-            
-            # Create platform using helper method
-            platform = self._create_platform_by_type(x, y, platform_width)
-            
-            # Ensure platforms don't overlap (simple check)
+
+            # Randomize platform type with weights
+            platform_type = random.choices(
+                ["regular", "moving", "disappearing", "dangerous"],
+                weights=[0.7, 0.15, 0.1, 0.05],  # More regular platforms
+                k=1
+            )[0]
+
+            platform_width = random.randint(80, 120)
+
+            # Create the appropriate platform type
+            if platform_type == "regular":
+                platform = Platform(x, y, width=platform_width, height=PLATFORM_HEIGHT)
+            elif platform_type == "moving":
+                platform = MovingPlatform(x, y, width=platform_width, height=PLATFORM_HEIGHT, speed=self.platform_speed)
+            elif platform_type == "disappearing":
+                platform = DisappearingPlatform(x, y, width=platform_width, height=PLATFORM_HEIGHT)
+            elif platform_type == "dangerous":
+                platform = DangerousPlatform(x, y, width=platform_width, height=PLATFORM_HEIGHT)
+
+            # Overlap check
             overlapping = False
             for existing_platform in self.platforms:
-                if (abs(existing_platform.y - y) < PLATFORM_HEIGHT * 2 and 
+                if (abs(existing_platform.y - y) < PLATFORM_HEIGHT * 2 and
                     abs(existing_platform.x - x) < platform_width):
                     overlapping = True
                     break
-            
+
             if not overlapping:
                 self.platforms.append(platform)
             

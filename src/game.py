@@ -141,15 +141,17 @@ class Game:
             moving_pct = custom_settings.get("moving_platform_pct", 25)
             disappearing_pct = custom_settings.get("disappearing_platform_pct", 15)
             dangerous_pct = custom_settings.get("dangerous_platform_pct", 10)
+            platform_gen_count = custom_settings.get("platform_count_per_generation", 10)
             
             self.current_map = Map(
                 platform_density=platform_density,
                 moving_platform_pct=moving_pct,
                 disappearing_platform_pct=disappearing_pct,
-                dangerous_platform_pct=dangerous_pct
+                dangerous_platform_pct=dangerous_pct,
+                platform_count_per_generation=platform_gen_count
             )
         else:
-            self.current_map = Map()
+            self.current_map = Map(platform_count_per_generation=10)
         
         # Set game reference in map for sound effects
         self.current_map.set_game(self)
