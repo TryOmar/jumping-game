@@ -58,7 +58,10 @@ def get_sound_path(sound_name):
         return None
     
     sound_file = SOUND_EFFECTS[sound_name]["file"]
-    return os.path.join(SOUND_BASE_PATH, sound_file)
+    # Use resource_path to ensure correct path resolution in packaged executable
+    full_path = resource_path(os.path.join(SOUND_BASE_PATH, sound_file))
+    print(f"Resolving sound path for {sound_name}: {full_path}")  # Debug print
+    return full_path
 
 def load_sound(sound_name):
     """Load a sound by its logical name, returning a pygame.mixer.Sound object."""
