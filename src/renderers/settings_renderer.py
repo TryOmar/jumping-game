@@ -45,6 +45,9 @@ class SettingsRenderer:
 
     def render(self, game):
         """Render the settings screen"""
+        # Store game reference for use in apply_settings
+        self._game_ref = game
+        
         self.screen.fill(COLORS.get("BG_SETTINGS", (60, 80, 140)))
         
         # Initialize game.settings_sliders and game.settings_buttons for EventHandler
@@ -152,12 +155,13 @@ class SettingsRenderer:
 
     def _render_slider(self, game, setting_key, label_text, y_pos, label_font, value_font):
         # Ensure game.audio_settings exists and has the key
-        if not hasattr(game, 'audio_settings') or setting_key not in game.audio_settings:
+        if not hasattr(game, 'audio_settings'):
+            game.audio_settings = {}
+            
+        if setting_key not in game.audio_settings:
             # Initialize with default from config if not present
-            if not hasattr(game, 'audio_settings'): game.audio_settings = {}
             game.audio_settings[setting_key] = get_setting("AUDIO", setting_key, 0.5)
-
-
+            
         # Label
         label_surface = label_font.render(label_text + ":", True, COLORS["TEXT_WHITE"])
         self.screen.blit(label_surface, (self.left_margin, y_pos))
@@ -166,10 +170,17 @@ class SettingsRenderer:
         slider_rect = pygame.Rect(self.right_margin_controls, y_pos + label_surface.get_height() // 2 - self.slider_height // 2, self.slider_width, self.slider_height)
         pygame.draw.rect(self.screen, (100, 100, 100), slider_rect) # Rail color
         pygame.draw.rect(self.screen, (150, 150, 150), slider_rect, 2) # Border
+        
+        # Get the current value directly from game.audio_settings
+        current_value = game.audio_settings[setting_key]
+        
+        # Filled part of slider to indicate value
+        fill_width = int(slider_rect.width * current_value)
+        fill_rect = pygame.Rect(slider_rect.x, slider_rect.y, fill_width, slider_rect.height)
+        pygame.draw.rect(self.screen, COLORS.get("SLIDER_FILL", (60, 120, 200)), fill_rect)
 
         # Slider Handle
-        current_value = game.audio_settings.get(setting_key, 0.5) # Default to 0.5 if somehow missing
-        handle_x = slider_rect.x + int(slider_rect.width * current_value)
+        handle_x = slider_rect.x + fill_width
         handle_rect = pygame.Rect(handle_x - 5, slider_rect.centery - 15, 10, 30)
         pygame.draw.rect(self.screen, COLORS.get("SETTING_VALUE", (200, 255, 200)), handle_rect) # Handle color
         pygame.draw.rect(self.screen, COLORS["TEXT_WHITE"], handle_rect, 2) # Handle border
@@ -190,30 +201,40 @@ class SettingsRenderer:
 
     def apply_settings(self):
         """Apply and save the current settings from game object and internal state"""
+        # We'll need to capture game reference during render and store it
+        # to access it here, since we can't use screen.game
+        audio_settings = {}
+        game = getattr(self, '_game_ref', None)
+        
+        if game and hasattr(game, 'audio_settings'):
+            audio_settings = {
+                "master_volume": game.audio_settings.get('master_volume', get_setting("AUDIO", "master_volume", 1.0)),
+                "sfx_volume": game.audio_settings.get('sfx_volume', get_setting("AUDIO", "sfx_volume", 1.0)),
+                "music_volume": game.audio_settings.get('music_volume', get_setting("AUDIO", "music_volume", 0.7)),
+                "music_enabled": get_setting("AUDIO", "music_enabled", True),
+                "sfx_enabled": get_setting("AUDIO", "sfx_enabled", True)
+            }
+            
+            # Save each audio setting
+            for key, value in audio_settings.items():
+                update_setting("AUDIO", key, value)
+        
         settings_to_save = {
             "WINDOW": {
                 "width": self.resolutions[self.current_resolution_idx][0],
                 "height": self.resolutions[self.current_resolution_idx][1],
                 "fullscreen": self.fullscreen_enabled
             },
-            "AUDIO": { # Assuming EventHandler updates game.audio_settings
-                "sfx_volume": get_setting("AUDIO","sfx_volume"), # Fetches from game.audio_settings
-                "music_volume": get_setting("AUDIO","music_volume") # Fetches from game.audio_settings
-            }
+            "AUDIO": audio_settings
         }
         
-        # Update settings in config
-        update_setting("WINDOW", "width", settings_to_save["WINDOW"]["width"])
-        update_setting("WINDOW", "height", settings_to_save["WINDOW"]["height"])
-        update_setting("WINDOW", "fullscreen", settings_to_save["WINDOW"]["fullscreen"])
+        # Apply window settings
+        window_settings = settings_to_save.get("WINDOW", {})
+        update_setting("WINDOW", "width", window_settings.get("width"))
+        update_setting("WINDOW", "height", window_settings.get("height"))
+        update_setting("WINDOW", "fullscreen", window_settings.get("fullscreen"))
         
-        # Audio settings are directly fetched by get_setting from game.audio_settings if they were updated
-        # So, no explicit update_setting needed here if get_setting already reflects changes made by EventHandler
-        # However, to be explicit or if get_setting doesn't see live changes from game.audio_settings:
-        update_setting("AUDIO", "sfx_volume", get_setting("AUDIO","sfx_volume"))
-        update_setting("AUDIO", "music_volume", get_setting("AUDIO","music_volume"))
-
-        return settings_to_save # Return applied settings for immediate use (e.g. screen update)
+        return settings_to_save
 
     # The old handle_mouse_click, handle_mouse_release, update_slider_value methods are removed
     # Event handling is now done by EventHandler.py

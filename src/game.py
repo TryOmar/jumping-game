@@ -39,6 +39,13 @@ class Game:
         # Initialize sound manager
         self.sound_manager = SoundManager(self)
         
+        # Initialize audio settings
+        self.audio_settings = {
+            'master_volume': get_setting('AUDIO', 'master_volume', 1.0),
+            'sfx_volume': get_setting('AUDIO', 'sfx_volume', 1.0),
+            'music_volume': get_setting('AUDIO', 'music_volume', 0.7)
+        }
+        
         # Setup audio with settings
         self.setup_audio()
         
@@ -72,9 +79,9 @@ class Game:
     def setup_audio(self):
         """Setup audio system with current settings"""
         # Get volume settings from user settings
-        master_volume = get_setting('AUDIO', 'master_volume', 1.0)
-        sfx_volume = get_setting('AUDIO', 'sfx_volume', 1.0)
-        music_volume = get_setting('AUDIO', 'music_volume', 0.7)
+        master_volume = self.audio_settings['master_volume']
+        sfx_volume = self.audio_settings['sfx_volume']
+        music_volume = self.audio_settings['music_volume']
         
         # Apply settings to sound manager
         self.sound_manager.update_volume(
@@ -224,10 +231,24 @@ class Game:
     def apply_audio_settings(self):
         """Apply current audio settings"""
         # Get volume settings
-        master_volume = get_setting('AUDIO', 'master_volume', 1.0)
-        sfx_volume = get_setting('AUDIO', 'sfx_volume', 1.0)
-        music_volume = get_setting('AUDIO', 'music_volume', 0.7)
+        master_volume = self.audio_settings['master_volume']
+        sfx_volume = self.audio_settings['sfx_volume']
+        music_volume = self.audio_settings['music_volume']
         
+        # Save the updated values back to settings if they exist in audio_settings
+        if hasattr(self, 'audio_settings'):
+            if 'master_volume' in self.audio_settings:
+                update_setting('AUDIO', 'master_volume', self.audio_settings['master_volume'])
+                master_volume = self.audio_settings['master_volume']
+            
+            if 'sfx_volume' in self.audio_settings:
+                update_setting('AUDIO', 'sfx_volume', self.audio_settings['sfx_volume'])
+                sfx_volume = self.audio_settings['sfx_volume']
+            
+            if 'music_volume' in self.audio_settings:
+                update_setting('AUDIO', 'music_volume', self.audio_settings['music_volume'])
+                music_volume = self.audio_settings['music_volume']
+            
         # Apply settings to sound manager
         self.sound_manager.update_volume(
             master=master_volume,

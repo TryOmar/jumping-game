@@ -137,6 +137,13 @@ class EventHandler:
                                 num_res = len(settings_renderer.resolutions)
                                 self.game.temporary_settings['resolution_idx'] = (current_idx - 1 + num_res) % num_res
                                 settings_renderer.update_local_settings_from_game(self.game.temporary_settings)
+                                
+                                # Apply display settings immediately
+                                display_settings = settings_renderer.get_current_display_settings()
+                                self._apply_display_settings(display_settings)
+                                
+                                # Play sound effect for button click
+                                self.game.sound_manager.play_ui_sound("click")
                             return # Event handled
                         elif button_key == 'res_right':
                             if 'resolution_idx' in self.game.temporary_settings:
@@ -144,11 +151,25 @@ class EventHandler:
                                 num_res = len(settings_renderer.resolutions)
                                 self.game.temporary_settings['resolution_idx'] = (current_idx + 1) % num_res
                                 settings_renderer.update_local_settings_from_game(self.game.temporary_settings)
+                                
+                                # Apply display settings immediately
+                                display_settings = settings_renderer.get_current_display_settings()
+                                self._apply_display_settings(display_settings)
+                                
+                                # Play sound effect for button click
+                                self.game.sound_manager.play_ui_sound("click")
                             return # Event handled
                         elif button_key == 'fullscreen_toggle':
                             if 'fullscreen' in self.game.temporary_settings:
                                 self.game.temporary_settings['fullscreen'] = not self.game.temporary_settings['fullscreen']
                                 settings_renderer.update_local_settings_from_game(self.game.temporary_settings)
+                                
+                                # Apply display settings immediately
+                                display_settings = settings_renderer.get_current_display_settings()
+                                self._apply_display_settings(display_settings)
+                                
+                                # Play sound effect for button click
+                                self.game.sound_manager.play_ui_sound("click")
                             return # Event handled
 
         elif event.type == pygame.MOUSEMOTION:
@@ -396,7 +417,12 @@ class EventHandler:
 
         # Apply audio immediately if it's an audio setting
         if slider_key in ['master_volume', 'sfx_volume', 'music_volume'] and settings_dict is self.game.audio_settings:
-             self.game.apply_audio_settings()
+            print(f"Slider moved: {slider_key} = {value}")
+            self.game.apply_audio_settings()
+            
+            # Play a test sound when moving the sfx slider
+            if slider_key == 'sfx_volume' and not pygame.mixer.get_busy():
+                self.game.sound_manager.play_ui_sound("hover")
     
     def _handle_menu_selection(self):
         """Handle selection from main menu"""

@@ -105,6 +105,9 @@ class SoundManager:
     
     def update_volume(self, master=None, sfx=None, music=None):
         """Update volume settings."""
+        # Print debug info to verify volume values
+        print(f"Updating volumes - Master: {master}, SFX: {sfx}, Music: {music}")
+        
         # Update the volume settings in sound_config
         sound_config.update_volume_settings(
             master=master,
@@ -115,8 +118,9 @@ class SoundManager:
         
         # Update music volume if it's currently playing
         if pygame.mixer.music.get_busy():
-            pygame.mixer.music.set_volume(sound_config.VOLUME_SETTINGS["MUSIC"] * 
-                                          sound_config.VOLUME_SETTINGS["MASTER"])
+            music_vol = sound_config.VOLUME_SETTINGS["MUSIC"] * sound_config.VOLUME_SETTINGS["MASTER"]
+            print(f"Setting music volume to: {music_vol}")
+            pygame.mixer.music.set_volume(music_vol)
     
     def play_ui_sound(self, action="click"):
         """Play UI sounds based on action type."""
