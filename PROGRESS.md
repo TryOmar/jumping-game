@@ -70,6 +70,7 @@
 - [ ] Fix bugs and glitches
 - [x] Optimize performance
 - [x] Refactor code for maintainability
+- [x] Implement configuration system (settings.py)
 - [ ] Add final polish and refinements
 
 ## 🏁 Final Steps
